@@ -3,8 +3,6 @@ package com.twillio.src.utils
 import tvi.webrtc.HardwareVideoDecoderFactory
 import tvi.webrtc.HardwareVideoEncoderFactory
 
-
-
 fun isH264Supported(): Boolean {
     val hardwareVideoEncoderFactory =
         HardwareVideoEncoderFactory(null, true, true)

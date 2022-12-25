@@ -41,7 +41,7 @@ import kotlin.properties.Delegates
 
 
 @SuppressLint("MissingInflatedId")
-class NativeView(context: Context, isFromReact: Boolean,activity: Activity,permissionAwareActivity:PermissionAwareActivity) :
+class CommonNativeView(context: Context, isFromReact: Boolean, activity: Activity, permissionAwareActivity:PermissionAwareActivity) :
   RelativeLayout(context) , PermissionListener, LifecycleOwner {
 
   private lateinit var lifecycleRegistry: LifecycleRegistry
@@ -1060,7 +1060,7 @@ class NativeView(context: Context, isFromReact: Boolean,activity: Activity,permi
     return true
   }
 
-  
+
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?): Boolean {
     if (requestCode == CAMERA_MIC_PERMISSION_REQUEST_CODE) {
       /*
