@@ -1,10 +1,11 @@
 package com.twillio
 
 import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.JavaScriptModule
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.modules.core.PermissionListener
 import com.facebook.react.uimanager.ViewManager
+import java.util.*
 
 
 class TwillioPackage : ReactPackage {
@@ -12,10 +13,16 @@ class TwillioPackage : ReactPackage {
     return emptyList()
   }
 
+  fun createJSModules(): List<Class<out JavaScriptModule?>?> {
+    return emptyList<Class<out JavaScriptModule?>>()
+  }
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
 
-    return listOf(TwillioViewManager())
+    return Arrays.asList<ViewManager<*, *>>(
+      TwilioCustomVideoViewManager(),
+      TwillioRemoteViewManager(),
+      TwillioLocaleViewManager()
+    )
   }
-
 
 }

@@ -13,7 +13,7 @@ class TwilioRemotePreview extends React.Component {
   static propTypes = {
     trackIdentifier: PropTypes.shape({
       /**
-       * The participant's video track you want to render in the view.
+       * The participant's video track you want to render in the views.
        */
       videoTrackSid: PropTypes.string.isRequired
     }),
@@ -27,8 +27,8 @@ class TwilioRemotePreview extends React.Component {
     accessibilityLabel: PropTypes.string,
     nativeID: PropTypes.string,
     testID: PropTypes.string,
-    // Whether to apply Z ordering to this view.  Setting this to true will cause
-    // this view to appear above other Twilio Video views.
+    // Whether to apply Z ordering to this views.  Setting this to true will cause
+    // this views to appear above other Twilio Video views.
     applyZOrder: PropTypes.bool
   }
 
@@ -59,7 +59,7 @@ class TwilioRemotePreview extends React.Component {
 }
 
 const NativeTwilioRemotePreview = requireNativeComponent(
-  'RNTwilioRemotePreview',
+  'TwillioRemoteView',
   TwilioRemotePreview
 )
 

@@ -8,12 +8,12 @@ import com.facebook.react.modules.core.PermissionAwareActivity
 
 class NativeViewActivity : ReactActivity() {
 
-  var view: NativeView? = null
+  var view: CommonNativeView? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val permissionAwareActivity =this as PermissionAwareActivity?
-    view = NativeView(this.applicationContext, false,this, permissionAwareActivity!!)
+    view = CommonNativeView(this.applicationContext, false,this, permissionAwareActivity!!)
     setContentView(view)
   }
 }

@@ -18,7 +18,7 @@ class TwilioVideoParticipantView extends Component {
        */
       participantSid: PropTypes.string.isRequired,
       /**
-       * The participant's video track sid you want to render in the view.
+       * The participant's video track sid you want to render in the views.
        */
       videoTrackSid: PropTypes.string.isRequired
     })
@@ -35,7 +35,7 @@ class TwilioVideoParticipantView extends Component {
 }
 
 const RCTTWRemoteVideoView = requireNativeComponent(
-  'RCTTWRemoteVideoView',
+  'TwillioRemoteView',
   TwilioVideoParticipantView
 )
 

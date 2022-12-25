@@ -1,24 +1,26 @@
-import React, { useState, useRef, FC, createRef } from 'react';
+import * as React from 'react';
+
 import {
-  Text,
-  TextInput,
-  View,
   Button,
   PermissionsAndroid,
   Platform,
+  TextInput,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-
 import {
+  TwilioVideo,
   TwilioVideoLocalView,
   TwilioVideoParticipantView,
-  TwilioVideo,
-} from 'react-native-twilio';
+} from 'react-native-twillio';
+import { useRef, useState } from 'react';
+import styles from './styles';
 
-const App: FC = (): JSX.Element => {
+export default function App() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [isSharing, setIsSharing] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+  const [isSharing, setIsSharing] = useState(false);
   const [isScreenShareEnabled, setIsScreenShareEnabled] = useState(false);
   const [status, setStatus] = useState('disconnected');
   const [participants, setParticipants] = useState(new Map());
@@ -220,5 +222,4 @@ const App: FC = (): JSX.Element => {
       />
     </View>
   );
-};
-export default App;
+}

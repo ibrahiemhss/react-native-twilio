@@ -1,14 +1,14 @@
-declare module 'react-native-twilio' {
-  import { ViewProps } from 'react-native';
-  import React from 'react';
+declare module "react-native-twillio" {
+  import { ViewProps } from "react-native";
+  import React from "react";
 
   export interface TrackIdentifier {
     participantSid: string;
     videoTrackSid: string;
   }
 
-  type scaleType = 'fit' | 'fill';
-  type cameraType = 'front' | 'back';
+  type scaleType = "fit" | "fill";
+  type cameraType = "front" | "back";
 
   interface TwilioVideoParticipantViewProps extends ViewProps {
     trackIdentifier: TrackIdentifier;
@@ -18,7 +18,7 @@ declare module 'react-native-twilio' {
      * Whether to apply Z ordering to this view.  Setting this to true will cause
      * this view to appear above other Twilio Video views.
      */
-    applyZOrder?: boolean | undefined;
+     applyZOrder?: boolean | undefined;
   }
 
   interface TwilioVideoLocalViewProps extends ViewProps {
@@ -86,25 +86,19 @@ declare module 'react-native-twilio' {
 
   export type ParticipantEventCb = (p: ParticipantEventArgs) => void;
 
-  export type NetworkLevelChangeEventCb = (
-    p: NetworkLevelChangeEventArgs
-  ) => void;
+  export type NetworkLevelChangeEventCb = (p: NetworkLevelChangeEventArgs) => void;
 
   export type DominantSpeakerChangedEventArgs = RoomEventCommonArgs & {
     participant: Participant;
-  };
+  }
 
-  export type DominantSpeakerChangedCb = (
-    d: DominantSpeakerChangedEventArgs
-  ) => void;
+  export type DominantSpeakerChangedCb = (d: DominantSpeakerChangedEventArgs) => void;
 
   export type LocalParticipantSupportedCodecsCbEventArgs = {
     supportedCodecs: Array<string>;
-  };
+  }
 
-  export type LocalParticipantSupportedCodecsCb = (
-    d: LocalParticipantSupportedCodecsCbEventArgs
-  ) => void;
+  export type LocalParticipantSupportedCodecsCb = (d: LocalParticipantSupportedCodecsCbEventArgs) => void;
 
   export type TwilioVideoProps = ViewProps & {
     onCameraDidStart?: () => void;
@@ -184,9 +178,13 @@ declare module 'react-native-twilio' {
     sendString: (message: string) => void;
   }
 
-  class TwilioVideoLocalView extends React.Component<TwilioVideoLocalViewProps> {}
+  class TwilioVideoLocalView extends React.Component<
+    TwilioVideoLocalViewProps
+  > {}
 
-  class TwilioVideoParticipantView extends React.Component<TwilioVideoParticipantViewProps> {}
+  class TwilioVideoParticipantView extends React.Component<
+    TwilioVideoParticipantViewProps
+  > {}
 
   export { TwilioVideoLocalView, TwilioVideoParticipantView, TwilioVideo };
 }

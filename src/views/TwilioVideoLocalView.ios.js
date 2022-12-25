@@ -34,7 +34,7 @@ class TwilioVideoLocalView extends Component {
 }
 
 const RCTTWLocalVideoView = requireNativeComponent(
-  'RCTTWLocalVideoView',
+  'TwillioLocaleView',
   TwilioVideoLocalView
 )
 
