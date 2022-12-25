@@ -5,7 +5,7 @@
  * Jonathan Chang <slycoder@gmail.com>
  */
 
-package com.twillio.src2;
+package com.twilio.src;
 
 import androidx.annotation.Nullable;
 
@@ -18,7 +18,7 @@ import java.util.Map;
 
 import tvi.webrtc.RendererCommon;
 
-import static com.twillio.src2.RNVideoViewGroup.Events.ON_FRAME_DIMENSIONS_CHANGED;
+import static com.twilio.src.RNVideoViewGroup.Events.ON_FRAME_DIMENSIONS_CHANGED;
 
 public class TwilioVideoPreviewManager extends SimpleViewManager<TwilioVideoPreview> {
 

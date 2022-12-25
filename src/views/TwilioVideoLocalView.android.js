@@ -30,7 +30,7 @@ class TwilioVideoPreview extends React.Component {
 TwilioVideoPreview.propTypes = propTypes
 
 const NativeTwilioVideoPreview = requireNativeComponent(
-  'TwillioLocaleView',
+  'TwilioLocaleView',
   TwilioVideoPreview
 )
 

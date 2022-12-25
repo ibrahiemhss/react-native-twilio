@@ -6,9 +6,9 @@
  * Ralph Pina <ralph.pina@gmail.com>
  * Jonathan Chang <slycoder@gmail.com>
  */
-package com.twillio.src2;
+package com.twilio.src;
 
-import static com.twillio.src.utils.IsH264SupportedKt.isH264Supported;
+import static com.twilio.src.utils.IsH264SupportedKt.isH264Supported;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.StringDef;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
@@ -90,7 +91,15 @@ import java.util.Collections;
 import java.util.List;
 
 public class CustomTwilioVideoView extends View implements LifecycleEventListener, AudioManager.OnAudioFocusChangeListener {
-    private static final String TAG = "CustomTwilioVideoView";
+  public CustomTwilioVideoView(Context context) {
+    super(context);
+  }
+
+  public CustomTwilioVideoView(Context context, AttributeSet attrs) {
+    super(context, attrs);
+  }
+
+  private static final String TAG = "CustomTwilioVideoView";
     private static final String DATA_TRACK_MESSAGE_THREAD_NAME = "DataTrackMessages";
     private static final String FRONT_CAMERA_TYPE = "front";
     private static final String BACK_CAMERA_TYPE = "back";
@@ -155,8 +164,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         String ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS = "onLocalParticipantSupportedCodecs";
     }
 
-    private final ThemedReactContext themedReactContext;
-    private final RCTEventEmitter eventEmitter;
+    private  ThemedReactContext themedReactContext;
+    private  RCTEventEmitter eventEmitter;
 
     private AudioFocusRequest audioFocusRequest;
     private AudioAttributes playbackAttributes;

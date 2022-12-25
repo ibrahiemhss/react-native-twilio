@@ -7,11 +7,11 @@
 #define TIMEOUT_SECONDS 600
 #define TEXT_TO_LOOK_FOR @"Welcome to React"
 
-@interface TwillioExampleTests : XCTestCase
+@interface TwilioExampleTests : XCTestCase
 
 @end
 
-@implementation TwillioExampleTests
+@implementation TwilioExampleTests
 
 - (BOOL)findSubviewInView:(UIView *)view matching:(BOOL (^)(UIView *view))test
 {

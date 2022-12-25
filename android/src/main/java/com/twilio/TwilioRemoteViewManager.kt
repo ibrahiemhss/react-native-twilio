@@ -1,4 +1,4 @@
-package com.twillio
+package com.twilio
 
 
 import android.util.Log
@@ -6,14 +6,14 @@ import com.facebook.react.common.MapBuilder
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.twillio.src2.CustomTwilioVideoView
-import com.twillio.src2.RNVideoViewGroup
-import com.twillio.src2.TwilioRemotePreview
+import com.twilio.src.CustomTwilioVideoView
+import com.twilio.src.RNVideoViewGroup
+import com.twilio.src.TwilioRemotePreview
 import tvi.webrtc.RendererCommon
 
-class TwillioRemoteViewManager : SimpleViewManager<TwilioRemotePreview>() {
+class TwilioRemoteViewManager : SimpleViewManager<TwilioRemotePreview>() {
 
-  val REACT_CLASS = "TwillioRemoteView"
+  val REACT_CLASS = "TwilioRemoteView"
   var myTrackSid: String? = ""
 
   override fun getName(): String {

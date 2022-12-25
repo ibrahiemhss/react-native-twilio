@@ -1,4 +1,4 @@
-package com.twillio
+package com.twilio
 
 
 import android.view.View
@@ -6,18 +6,18 @@ import com.facebook.react.common.MapBuilder
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.twillio.src2.RNVideoViewGroup
-import com.twillio.src2.TwilioVideoPreview
+import com.twilio.src.RNVideoViewGroup
+import com.twilio.src.TwilioVideoPreview
 import tvi.webrtc.RendererCommon
 
-class TwillioLocaleViewManager : SimpleViewManager<View>() {
+class TwilioLocaleViewManager : SimpleViewManager<View>() {
 
   override fun createViewInstance(reactContext: ThemedReactContext): View {
     return TwilioVideoPreview(reactContext)
 
   }
 
-  val REACT_CLASS = "TwillioLocaleView"
+  val REACT_CLASS = "TwilioLocaleView"
 
   override fun getName(): String {
     return REACT_CLASS

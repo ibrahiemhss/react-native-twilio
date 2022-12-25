@@ -4,9 +4,11 @@
  * Author:
  * Jonathan Chang <slycoder@gmail.com>
  */
-package com.twillio.src2;
+package com.twilio.src;
 
+import android.content.Context;
 import android.graphics.Point;
+import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.StringDef;
@@ -23,12 +25,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 public class RNVideoViewGroup extends ViewGroup {
+  public RNVideoViewGroup(Context context) {
+    super(context);
+  }
+
+  public RNVideoViewGroup(Context context, AttributeSet attrs) {
+    super(context, attrs);
+  }
+
     private PatchedVideoView surfaceViewRenderer = null;
     private int videoWidth = 0;
     private int videoHeight = 0;
     private final Object layoutSync = new Object();
     private RendererCommon.ScalingType scalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL;
-    private final RCTEventEmitter eventEmitter;
+    private  RCTEventEmitter eventEmitter;
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({Events.ON_FRAME_DIMENSIONS_CHANGED})

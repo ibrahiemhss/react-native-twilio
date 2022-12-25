@@ -1,4 +1,4 @@
-package com.twillio
+package com.twilio
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.JavaScriptModule
@@ -8,7 +8,7 @@ import com.facebook.react.uimanager.ViewManager
 import java.util.*
 
 
-class TwillioPackage : ReactPackage {
+class TwilioPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
     return emptyList()
   }
@@ -20,8 +20,8 @@ class TwillioPackage : ReactPackage {
 
     return Arrays.asList<ViewManager<*, *>>(
       TwilioCustomVideoViewManager(),
-      TwillioRemoteViewManager(),
-      TwillioLocaleViewManager()
+      TwilioRemoteViewManager(),
+      TwilioLocaleViewManager()
     )
   }
 

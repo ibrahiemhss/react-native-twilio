@@ -5,7 +5,7 @@
  * Jonathan Chang <slycoder@gmail.com>
  */
 
-package com.twillio.src2;
+package com.twilio.src;
 
 import android.util.Log;
 

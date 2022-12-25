@@ -1,4 +1,4 @@
-package com.twillioexample.newarchitecture.components;
+package com.Twilioexample.newarchitecture.components;
 
 import com.facebook.jni.HybridData;
 import com.facebook.proguard.annotations.DoNotStrip;

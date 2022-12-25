@@ -1,10 +1,10 @@
-package com.twillio
+package com.twilio
 
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.common.MapBuilder
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
-import com.twillio.src2.CustomTwilioVideoView
+import com.twilio.src.CustomTwilioVideoView
 
 class TwilioCustomVideoViewManager : SimpleViewManager<CustomTwilioVideoView?>() {
   override fun getName(): String {

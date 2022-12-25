@@ -1,4 +1,4 @@
-declare module "react-native-twillio" {
+declare module "react-native-twilio" {
   import { ViewProps } from "react-native";
   import React from "react";
 

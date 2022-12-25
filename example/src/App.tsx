@@ -13,7 +13,7 @@ import {
   TwilioVideo,
   TwilioVideoLocalView,
   TwilioVideoParticipantView,
-} from 'react-native-twillio';
+} from 'react-native-twilio';
 import { useRef, useState } from 'react';
 import styles from './styles';
 
