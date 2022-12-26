@@ -19,8 +19,8 @@ class TwilioPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
 
     return Arrays.asList<ViewManager<*, *>>(
-      TwilioCustomVideoViewManager(),
-      TwilioRemoteViewManager(),
+      CustomTwilioVideoViewManager(),
+      TwilioRemotePreviewManager(),
       TwilioLocaleViewManager()
     )
   }

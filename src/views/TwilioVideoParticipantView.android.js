@@ -59,7 +59,7 @@ class TwilioRemotePreview extends React.Component {
 }
 
 const NativeTwilioRemotePreview = requireNativeComponent(
-  'TwilioRemoteView',
+  'RCTTWRemoteVideoView',
   TwilioRemotePreview
 )
 

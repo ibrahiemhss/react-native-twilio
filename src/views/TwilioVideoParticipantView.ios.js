@@ -35,7 +35,7 @@ class TwilioVideoParticipantView extends Component {
 }
 
 const RCTTWRemoteVideoView = requireNativeComponent(
-  'TwilioRemoteView',
+  'RCTTWRemoteVideoView',
   TwilioVideoParticipantView
 )
 

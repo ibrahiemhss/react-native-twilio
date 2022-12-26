@@ -321,7 +321,7 @@ class CustomTwilioVideoView extends Component {
 CustomTwilioVideoView.propTypes = propTypes
 
 const NativeCustomTwilioVideoView = requireNativeComponent(
-  'TwilioCustomView',
+  'RNCustomTwilioVideoView',
   CustomTwilioVideoView
 )
 

@@ -4,9 +4,10 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.common.MapBuilder
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
-import com.twilio.src.CustomTwilioVideoView
+import com.twilio.utils.Events
+import com.twilio.views.CustomTwilioVideoView
 
-class TwilioCustomVideoViewManager : SimpleViewManager<CustomTwilioVideoView?>() {
+class CustomTwilioVideoViewManager : SimpleViewManager<CustomTwilioVideoView?>() {
   override fun getName(): String {
     return REACT_CLASS
   }
@@ -15,6 +16,7 @@ class TwilioCustomVideoViewManager : SimpleViewManager<CustomTwilioVideoView?>()
     return CustomTwilioVideoView(reactContext)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun receiveCommand(view: CustomTwilioVideoView, commandId: Int, args: ReadableArray?) {
     when (commandId) {
       CONNECT_TO_ROOM -> {
@@ -53,7 +55,7 @@ class TwilioCustomVideoViewManager : SimpleViewManager<CustomTwilioVideoView?>()
         val audioEnabled = args!!.getBoolean(0)
         view.toggleAudio(audioEnabled)
       }
-      GET_STATS -> view.getStats()
+      GET_STATS -> view.stats
       DISABLE_OPENSL_ES -> view.disableOpenSLES()
       TOGGLE_SOUND_SETUP -> {
         val speaker = args!!.getBoolean(0)
@@ -76,102 +78,102 @@ class TwilioCustomVideoViewManager : SimpleViewManager<CustomTwilioVideoView?>()
 
   override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, MutableMap<String, String>>? {
     val map = MapBuilder.of(
-      CustomTwilioVideoView.Events.ON_CAMERA_SWITCHED,
-      MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_CAMERA_SWITCHED),
-      CustomTwilioVideoView.Events.ON_VIDEO_CHANGED,
-      MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_VIDEO_CHANGED),
-      CustomTwilioVideoView.Events.ON_AUDIO_CHANGED,
-      MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_AUDIO_CHANGED),
-      CustomTwilioVideoView.Events.ON_CONNECTED,
-      MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_CONNECTED),
-      CustomTwilioVideoView.Events.ON_CONNECT_FAILURE,
-      MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_CONNECT_FAILURE),
-      CustomTwilioVideoView.Events.ON_DISCONNECTED,
-      MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_DISCONNECTED),
-      CustomTwilioVideoView.Events.ON_PARTICIPANT_CONNECTED,
-      MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_PARTICIPANT_CONNECTED)
+     Events.ON_CAMERA_SWITCHED,
+      MapBuilder.of("registrationName",Events.ON_CAMERA_SWITCHED),
+     Events.ON_VIDEO_CHANGED,
+      MapBuilder.of("registrationName",Events.ON_VIDEO_CHANGED),
+     Events.ON_AUDIO_CHANGED,
+      MapBuilder.of("registrationName",Events.ON_AUDIO_CHANGED),
+     Events.ON_CONNECTED,
+      MapBuilder.of("registrationName",Events.ON_CONNECTED),
+     Events.ON_CONNECT_FAILURE,
+      MapBuilder.of("registrationName",Events.ON_CONNECT_FAILURE),
+     Events.ON_DISCONNECTED,
+      MapBuilder.of("registrationName",Events.ON_DISCONNECTED),
+     Events.ON_PARTICIPANT_CONNECTED,
+      MapBuilder.of("registrationName",Events.ON_PARTICIPANT_CONNECTED)
     )
     map.putAll(
       MapBuilder.of(
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_DISCONNECTED,
-        MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_PARTICIPANT_DISCONNECTED),
-        CustomTwilioVideoView.Events.ON_DATATRACK_MESSAGE_RECEIVED,
+       Events.ON_PARTICIPANT_DISCONNECTED,
+        MapBuilder.of("registrationName",Events.ON_PARTICIPANT_DISCONNECTED),
+       Events.ON_DATATRACK_MESSAGE_RECEIVED,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_DATATRACK_MESSAGE_RECEIVED
+         Events.ON_DATATRACK_MESSAGE_RECEIVED
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_ADDED_DATA_TRACK,
+       Events.ON_PARTICIPANT_ADDED_DATA_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_ADDED_DATA_TRACK
+         Events.ON_PARTICIPANT_ADDED_DATA_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_ADDED_VIDEO_TRACK,
+       Events.ON_PARTICIPANT_ADDED_VIDEO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_ADDED_VIDEO_TRACK
+         Events.ON_PARTICIPANT_ADDED_VIDEO_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_VIDEO_TRACK,
+       Events.ON_PARTICIPANT_REMOVED_VIDEO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_VIDEO_TRACK
+         Events.ON_PARTICIPANT_REMOVED_VIDEO_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_ADDED_AUDIO_TRACK,
+       Events.ON_PARTICIPANT_ADDED_AUDIO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_ADDED_AUDIO_TRACK
+         Events.ON_PARTICIPANT_ADDED_AUDIO_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_AUDIO_TRACK,
+       Events.ON_PARTICIPANT_REMOVED_AUDIO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_AUDIO_TRACK
+         Events.ON_PARTICIPANT_REMOVED_AUDIO_TRACK
         )
       )
     )
     map.putAll(
       MapBuilder.of(
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_DATA_TRACK,
+       Events.ON_PARTICIPANT_REMOVED_DATA_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_REMOVED_DATA_TRACK
+         Events.ON_PARTICIPANT_REMOVED_DATA_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS,
+       Events.ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS
+         Events.ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS
         )
       )
     )
     map.putAll(
       MapBuilder.of(
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_ENABLED_VIDEO_TRACK,
+       Events.ON_PARTICIPANT_ENABLED_VIDEO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_ENABLED_VIDEO_TRACK
+         Events.ON_PARTICIPANT_ENABLED_VIDEO_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_DISABLED_VIDEO_TRACK,
+       Events.ON_PARTICIPANT_DISABLED_VIDEO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_DISABLED_VIDEO_TRACK
+         Events.ON_PARTICIPANT_DISABLED_VIDEO_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_ENABLED_AUDIO_TRACK,
+       Events.ON_PARTICIPANT_ENABLED_AUDIO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_ENABLED_AUDIO_TRACK
+         Events.ON_PARTICIPANT_ENABLED_AUDIO_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_PARTICIPANT_DISABLED_AUDIO_TRACK,
+       Events.ON_PARTICIPANT_DISABLED_AUDIO_TRACK,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_PARTICIPANT_DISABLED_AUDIO_TRACK
+         Events.ON_PARTICIPANT_DISABLED_AUDIO_TRACK
         ),
-        CustomTwilioVideoView.Events.ON_STATS_RECEIVED,
-        MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_STATS_RECEIVED),
-        CustomTwilioVideoView.Events.ON_NETWORK_QUALITY_LEVELS_CHANGED,
+       Events.ON_STATS_RECEIVED,
+        MapBuilder.of("registrationName",Events.ON_STATS_RECEIVED),
+       Events.ON_NETWORK_QUALITY_LEVELS_CHANGED,
         MapBuilder.of(
           "registrationName",
-          CustomTwilioVideoView.Events.ON_NETWORK_QUALITY_LEVELS_CHANGED
+         Events.ON_NETWORK_QUALITY_LEVELS_CHANGED
         ),
-        CustomTwilioVideoView.Events.ON_DOMINANT_SPEAKER_CHANGED,
-        MapBuilder.of("registrationName", CustomTwilioVideoView.Events.ON_DOMINANT_SPEAKER_CHANGED)
+       Events.ON_DOMINANT_SPEAKER_CHANGED,
+        MapBuilder.of("registrationName",Events.ON_DOMINANT_SPEAKER_CHANGED)
       )
     )
     return map
@@ -193,7 +195,7 @@ class TwilioCustomVideoViewManager : SimpleViewManager<CustomTwilioVideoView?>()
   }
 
   companion object {
-    const val REACT_CLASS = "TwilioCustomView"
+    const val REACT_CLASS = "RNCustomTwilioVideoView"
     private const val CONNECT_TO_ROOM = 1
     private const val DISCONNECT = 2
     private const val SWITCH_CAMERA = 3

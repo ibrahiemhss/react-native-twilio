@@ -1,4 +1,4 @@
-package com.twilio.src.utils
+package com.twilio.views.utils
 
 import tvi.webrtc.HardwareVideoDecoderFactory
 import tvi.webrtc.HardwareVideoEncoderFactory
