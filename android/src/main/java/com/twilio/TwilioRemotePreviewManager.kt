@@ -62,6 +62,6 @@ class TwilioRemotePreviewManager : SimpleViewManager<TwilioRemotePreview>() {
     }
 
     companion object {
-        const val REACT_CLASS = "RNTwilioRemotePreview"
+        const val REACT_CLASS = "RCTTWRemoteVideoView"
     }
 }
