@@ -1,5 +1,5 @@
 {
-  "name": "react-native-twilio",
+  "name": "react-native-twillio",
   "version": "0.1.0",
   "description": "test",
   "main": "lib/commonjs/index",
@@ -41,13 +41,13 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/ibrahiemhss/react-native-twilio",
+  "repository": "https://github.com/ibrahiemhss/react-native-twillio",
   "author": "ibrahiemhss <ibrhimhsssss@gmail.com> (https://github.com/ibrahiemhss)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ibrahiemhss/react-native-twilio/issues"
+    "url": "https://github.com/ibrahiemhss/react-native-twillio/issues"
   },
-  "homepage": "https://github.com/ibrahiemhss/react-native-twilio#readme",
+  "homepage": "https://github.com/ibrahiemhss/react-native-twillio#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
