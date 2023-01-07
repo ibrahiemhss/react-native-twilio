@@ -1,6 +1,6 @@
 buildscript {
   // Buildscript is evaluated before everything else so we can't use getExtOrDefault
-  def kotlin_version = rootProject.ext.has("kotlinVersion") ? rootProject.ext.get("kotlinVersion") : project.properties["Twillio_kotlinVersion"]
+  def kotlin_version = rootProject.ext.has("kotlinVersion") ? rootProject.ext.get("kotlinVersion") : project.properties["Twilio_kotlinVersion"]
 
   repositories {
     google()
@@ -27,11 +27,11 @@ if (isNewArchitectureEnabled()) {
 }
 
 def getExtOrDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["Twillio_" + name]
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["Twilio_" + name]
 }
 
 def getExtOrIntegerDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["Twillio_" + name]).toInteger()
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["Twilio_" + name]).toInteger()
 }
 
 android {
@@ -61,10 +61,38 @@ android {
 
 }
 
+
 repositories {
   google()
+  maven {
+    // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+    url "$rootDir/../node_modules/react-native/android"
+  }
   mavenCentral()
+}
+allprojects {
+  repositories {
+    mavenLocal()
+    maven {
+      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+      url(new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), '../android'))
+    }
+    maven {
+      // Android JSC is installed from npm
+      url(new File(['node', '--print', "require.resolve('jsc-android/package.json')"].execute(null, rootDir).text.trim(), '../dist'))
+    }
 
+    google()
+    mavenCentral {
+      // We don't want to fetch react-native from Maven Central as there are
+      // older versions over there.
+      content {
+        excludeGroup 'com.facebook.react'
+      }
+    }
+    jcenter() // <-- Add this
+    maven { url 'https://www.jitpack.io' }
+  }
 }
 
 def kotlin_version = getExtOrDefault("kotlinVersion")
@@ -72,6 +100,7 @@ def lifecycle_version = "2.4.0"
 
 
 dependencies {
+  implementation fileTree(dir: 'libs', include: '*.jar')
   // For < 0.71, this will be from the local maven repo
   // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
   //noinspection GradleDynamicVersion
@@ -80,18 +109,22 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
   implementation "com.twilio:audioswitch:1.1.5"
   implementation "com.twilio:video-android-ktx:7.5.1"
+  implementation "com.twilio:video-android:7.5.1"
   implementation "com.android.support.constraint:constraint-layout:2.0.4"
   implementation "com.koushikdutta.ion:ion:2.1.8"
   implementation 'com.google.android.material:material:1.7.0'
   implementation 'androidx.preference:preference-ktx:1.2.0'
+  implementation "com.twilio:video-android:7.5.1"
   implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
   implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
 }
 
+/*
 if (isNewArchitectureEnabled()) {
   react {
     jsRootDir = file("../src/")
-    libraryName = "TwillioView"
-    codegenJavaPackageName = "com.twillio"
+    libraryName = "TwilioView"
+    codegenJavaPackageName = "com.twilio"
   }
 }
+*/
