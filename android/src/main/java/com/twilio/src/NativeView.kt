@@ -3,9 +3,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Build
+import android.util.JsonToken
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -21,6 +23,8 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.preference.PreferenceManager
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.koushikdutta.ion.Ion
 import com.twilio.audioswitch.AudioDevice
 import com.twilio.audioswitch.AudioDevice.*
@@ -46,7 +50,10 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   private val TAG = "MainActivity"
   private val CAMERA_PERMISSION_INDEX = 0
   private val MIC_PERMISSION_INDEX = 1
-   private  var mAccessToken: String?=null
+  private val ACCESS_TOKEN_SERVER = "http://localhost:3000";//TODO WANT CHANGE===============
+  private val TWILIO_ACCESS_TOKEN =
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTS2M5MmRiYzYzNTliYjk0NzU4ZDdkZmUyNTNiYThkNjhmLTE2NzA1MTc2MzgiLCJpc3MiOiJTS2M5MmRiYzYzNTliYjk0NzU4ZDdkZmUyNTNiYThkNjhmIiwic3ViIjoiQUNhYzUzNWZlOTczMmYwNTVhOWJiOTY4N2U4OTdkYjk1ZiIsImV4cCI6MTY3MDUyMTIzOCwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcl9hNSIsInZpZGVvIjp7InJvb20iOiJnb29kX3Jvb20ifX19.rt4z1-gfTBAAtzIGX-h_ZXPrT1BwSpfkw82MGhAKY10"
+  private lateinit var accessToken: String
   public var myRoom: Room? = null
   public var myActivity: Activity? = null
   public var myPermissionAwareActivity: PermissionAwareActivity? = null
@@ -54,16 +61,22 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   public var savedVolumeControlStream by Delegates.notNull<Int>()
   var localAudioTrack: LocalAudioTrack? = null
   var localVideoTrack: LocalVideoTrack? = null
+  private var alertDialog: AlertDialog? = null
   var audioDeviceMenuItem: MenuItem? = null
   private var participantIdentity: String? = null
   lateinit var localVideoView: VideoSink
   var disconnectedFromOnDestroy = false
   private var isSpeakerPhoneEnabled = true
-  var mainView: View?=null
+  var mainView: View? = null
 
-  private var mReconnectingProgressBar : ProgressBar? = null
-  private var mVideoStatusTextView : TextView? = null
-  private var mPrimaryVideoView : VideoView? = null
+  private var mReconnectingProgressBar: ProgressBar? = null
+  private var mVideoStatusTextView: TextView? = null
+  private var mConnectActionFab: FloatingActionButton? = null
+  private var mSwitchCameraActionFab: FloatingActionButton? = null
+  private var mLocalVideoActionFab: FloatingActionButton? = null
+  private var mMuteActionFab: FloatingActionButton? = null
+  private var mThumbnailVideoView: VideoView? = null
+  private var mPrimaryVideoView: VideoView? = null
 
 
   val cameraCapturerCompat by lazy {
@@ -81,33 +94,51 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
 
   init {
     val inflater = LayoutInflater.from(context)
-     mainView = inflater.inflate(R.layout.content_video, this)
+    mainView = inflater.inflate(R.layout.activity_video, this)
     //-------------------------------------------------
 
-    mReconnectingProgressBar = mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
+    mReconnectingProgressBar =
+      mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
     mVideoStatusTextView = mainView!!.findViewById<View>(R.id.videoStatusTextView) as TextView?
-  //  mConnectActionFab = mainView!!.findViewById<View>(R.id.connectActionFab) as FloatingActionButton?
-  //  mSwitchCameraActionFab= mainView!!.findViewById<View>(R.id.switchCameraActionFab) as FloatingActionButton?
-  //  mLocalVideoActionFab= mainView!!.findViewById<View>(R.id.localVideoActionFab) as FloatingActionButton?
-   // mMuteActionFab= mainView!!.findViewById<View>(R.id.muteActionFab) as FloatingActionButton?
-   // mThumbnailVideoView= mainView!!.findViewById<View>(R.id.thumbnailVideoView) as VideoView?
-    mPrimaryVideoView= mainView!!.findViewById<View>(R.id.primaryVideoView) as VideoView?
+    mConnectActionFab =
+      mainView!!.findViewById<View>(R.id.connectActionFab) as FloatingActionButton?
+    mSwitchCameraActionFab =
+      mainView!!.findViewById<View>(R.id.switchCameraActionFab) as FloatingActionButton?
+    mLocalVideoActionFab =
+      mainView!!.findViewById<View>(R.id.localVideoActionFab) as FloatingActionButton?
+    mMuteActionFab = mainView!!.findViewById<View>(R.id.muteActionFab) as FloatingActionButton?
+    mThumbnailVideoView = mainView!!.findViewById<View>(R.id.thumbnailVideoView) as VideoView?
+    mPrimaryVideoView = mainView!!.findViewById<View>(R.id.primaryVideoView) as VideoView?
 
     //-------------------------------------------------
 
-    myActivity=activity
+    myActivity = activity
     myPermissionAwareActivity = permissionAwareActivity
     localVideoView = mPrimaryVideoView!!
 
     savedVolumeControlStream = myActivity!!.volumeControlStream
     myActivity!!.volumeControlStream = AudioManager.STREAM_VOICE_CALL
-
+    setAccessToken(TWILIO_ACCESS_TOKEN)
     if (!checkPermissionForCameraAndMicrophone()) {
       requestPermissionForCameraMicrophoneAndBluetooth()
     } else {
       createAudioAndVideoTracks()
       audioSwitch.start { audioDevices, audioDevice -> updateAudioDeviceIcon(audioDevice) }
     }
+    //-------------------------------------------------
+
+    mReconnectingProgressBar =
+      mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
+    mVideoStatusTextView = mainView!!.findViewById<View>(R.id.videoStatusTextView) as TextView?
+    mConnectActionFab =
+      mainView!!.findViewById<View>(R.id.connectActionFab) as FloatingActionButton?
+    mSwitchCameraActionFab =
+      mainView!!.findViewById<View>(R.id.switchCameraActionFab) as FloatingActionButton?
+    mLocalVideoActionFab =
+      mainView!!.findViewById<View>(R.id.localVideoActionFab) as FloatingActionButton?
+    mMuteActionFab = mainView!!.findViewById<View>(R.id.muteActionFab) as FloatingActionButton?
+    mThumbnailVideoView = mainView!!.findViewById<View>(R.id.thumbnailVideoView) as VideoView?
+    mPrimaryVideoView = mainView!!.findViewById<View>(R.id.primaryVideoView) as VideoView?
 
     //-------------------------------------------------
     localVideoTrack = if (localVideoTrack == null && checkPermissionForCameraAndMicrophone()) {
@@ -122,13 +153,14 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     localVideoTrack?.addSink(localVideoView)
     localVideoTrack?.let { myLocalParticipant?.publishTrack(it) }
     myLocalParticipant?.setEncodingParameters(encodingParameters)
-/*
+
     myRoom?.let {
       mReconnectingProgressBar!!.visibility = if (it.state != Room.State.RECONNECTING)
         View.GONE else
         View.VISIBLE
       mVideoStatusTextView!!.text = "Connected to ${it.name}"
-    }*/
+    }
+    initializeUI()
   }
 
   /*
@@ -138,11 +170,11 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   private val audioCodec: AudioCodec
     get() {
       // TODO CHANGES ---------
-    /*  val audioCodecName = sharedPreferences.getString(
-        TwilioSettingsActivity.PREF_AUDIO_CODEC,
-        TwilioSettingsActivity.PREF_AUDIO_CODEC_DEFAULT
-      )*/
-      val audioCodecName =  OpusCodec.NAME
+      /*  val audioCodecName = sharedPreferences.getString(
+          TwilioSettingsActivity.PREF_AUDIO_CODEC,
+          TwilioSettingsActivity.PREF_AUDIO_CODEC_DEFAULT
+        )*/
+      val audioCodecName = OpusCodec.NAME
       return when (audioCodecName) {
         IsacCodec.NAME -> IsacCodec()
         OpusCodec.NAME -> OpusCodec()
@@ -155,17 +187,17 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   private val videoCodec: VideoCodec
     get() {
       // TODO CHANGES ---------
-     /* val videoCodecName = sharedPreferences.getString(
-        TwilioSettingsActivity.PREF_VIDEO_CODEC,
-        TwilioSettingsActivity.PREF_VIDEO_CODEC_DEFAULT
-      )*/
-      val videoCodecName =   Vp8Codec.NAME
+      /* val videoCodecName = sharedPreferences.getString(
+         TwilioSettingsActivity.PREF_VIDEO_CODEC,
+         TwilioSettingsActivity.PREF_VIDEO_CODEC_DEFAULT
+       )*/
+      val videoCodecName = Vp8Codec.NAME
       return when (videoCodecName) {
         Vp8Codec.NAME -> {
-         /* val simulcast = sharedPreferences.getBoolean(
-            TwilioSettingsActivity.PREF_VP8_SIMULCAST,
-            TwilioSettingsActivity.PREF_VP8_SIMULCAST_DEFAULT
-          )*/
+          /* val simulcast = sharedPreferences.getBoolean(
+             TwilioSettingsActivity.PREF_VP8_SIMULCAST,
+             TwilioSettingsActivity.PREF_VP8_SIMULCAST_DEFAULT
+           )*/
           Vp8Codec(false)
         }
         H264Codec.NAME -> H264Codec()
@@ -185,20 +217,20 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
    */
   val encodingParameters: EncodingParameters
     get() {
-     /* val defaultMaxAudioBitrate = TwilioSettingsActivity.PREF_SENDER_MAX_AUDIO_BITRATE_DEFAULT
-      val defaultMaxVideoBitrate = TwilioSettingsActivity.PREF_SENDER_MAX_VIDEO_BITRATE_DEFAULT
-      val maxAudioBitrate = Integer.parseInt(
-        sharedPreferences.getString(
-          TwilioSettingsActivity.PREF_SENDER_MAX_AUDIO_BITRATE,
-          defaultMaxAudioBitrate
-        ) ?: defaultMaxAudioBitrate
-      )
-      val maxVideoBitrate = Integer.parseInt(
-        sharedPreferences.getString(
-          TwilioSettingsActivity.PREF_SENDER_MAX_VIDEO_BITRATE,
-          defaultMaxVideoBitrate
-        ) ?: defaultMaxVideoBitrate
-      )*/
+      /* val defaultMaxAudioBitrate = TwilioSettingsActivity.PREF_SENDER_MAX_AUDIO_BITRATE_DEFAULT
+       val defaultMaxVideoBitrate = TwilioSettingsActivity.PREF_SENDER_MAX_VIDEO_BITRATE_DEFAULT
+       val maxAudioBitrate = Integer.parseInt(
+         sharedPreferences.getString(
+           TwilioSettingsActivity.PREF_SENDER_MAX_AUDIO_BITRATE,
+           defaultMaxAudioBitrate
+         ) ?: defaultMaxAudioBitrate
+       )
+       val maxVideoBitrate = Integer.parseInt(
+         sharedPreferences.getString(
+           TwilioSettingsActivity.PREF_SENDER_MAX_VIDEO_BITRATE,
+           defaultMaxVideoBitrate
+         ) ?: defaultMaxVideoBitrate
+       )*/
 
       return EncodingParameters(2, 4)
     }
@@ -230,6 +262,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     override fun onConnectFailure(room: Room, e: TwilioException) {
       mVideoStatusTextView!!.text = "Failed to connect"
       audioSwitch.deactivate()
+      initializeUI()
     }
 
     override fun onDisconnected(room: Room, e: TwilioException?) {
@@ -240,6 +273,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
       // Only reinitialize the UI if disconnect was not called from onDestroy()
       if (!disconnectedFromOnDestroy) {
         audioSwitch.deactivate()
+        initializeUI()
         moveLocalVideoToPrimaryView()
       }
     }
@@ -497,6 +531,12 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
           "message=${twilioException.message}]"
       )
       mVideoStatusTextView!!.text = "onVideoTrackSubscriptionFailed"
+      Snackbar.make(
+        mConnectActionFab!!,
+        "Failed to subscribe to ${remoteParticipant.identity}",
+        Snackbar.LENGTH_LONG
+      )
+        .show()
     }
 
     override fun onAudioTrackEnabled(
@@ -529,7 +569,6 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
 
-
   private fun checkPermissions(permissions: Array<String>): Boolean {
     var shouldCheck = true
     for (permission in permissions) {
@@ -552,14 +591,19 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
       Toast.makeText(this.context, R.string.permissions_needed, Toast.LENGTH_LONG).show()
     } else {
       if (myPermissionAwareActivity != null) {
-        myPermissionAwareActivity?.requestPermissions( permissions, CAMERA_MIC_PERMISSION_REQUEST_CODE,this)
+        myPermissionAwareActivity?.requestPermissions(
+          permissions,
+          CAMERA_MIC_PERMISSION_REQUEST_CODE,
+          this
+        )
       }
-      }
+    }
   }
 
   fun checkPermissionForCameraAndMicrophone(): Boolean {
     return checkPermissions(
-      arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO))
+      arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+    )
   }
 
   fun requestPermissionForCameraMicrophoneAndBluetooth() {
@@ -578,20 +622,6 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     requestPermissions(permissionsList)
   }
 
-  fun registerTrackIdVideoView( trackSid: String) {
-    if (myRoom != null) {
-      for (participant in myRoom!!.remoteParticipants) {
-        for (publication in participant.remoteVideoTracks) {
-          val track = publication.remoteVideoTrack ?: continue
-          if (publication.trackSid == trackSid) {
-            track.addSink(mPrimaryVideoView!!)
-          } else {
-            track.removeSink(mPrimaryVideoView!!)
-          }
-        }
-      }
-    }
-  }
   fun createAudioAndVideoTracks() {
     // Share your microphone
     localAudioTrack = createLocalAudioTrack(this.context, true)
@@ -604,50 +634,69 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     )
   }
 
-   fun connectToRoom(roomName: String?) {
-    if(mAccessToken!=null&&roomName!=null){
-      if(mAccessToken!!.isNotEmpty()){
-        audioSwitch.activate()
-        myRoom = connect(this.context, mAccessToken!!, roomListener) {
-          roomName(roomName)
-          /*
-           * Add local audio track to connect options to share with participants.
-           */
-          audioTracks(listOf(localAudioTrack))
-          /*
-           * Add local video track to connect options to share with participants.
-           */
-          videoTracks(listOf(localVideoTrack))
+  public fun setAccessToken(token: String) {
 
-          /*
-           * Set the preferred audio and video codec for media.
-           */
-          preferAudioCodecs(listOf(audioCodec))
-          preferVideoCodecs(listOf(videoCodec))
+    this.accessToken = token
 
-          /*
-           * Set the sender side encoding parameters.
-           */
-          encodingParameters(encodingParameters)
+  }
 
-          /*
-           * Toggles automatic track subscription. If set to false, the LocalParticipant will receive
-           * notifications of track publish events, but will not automatically subscribe to them. If
-           * set to true, the LocalParticipant will automatically subscribe to tracks as they are
-           * published. If unset, the default is true. Note: This feature is only available for Group
-           * Rooms. Toggling the flag in a P2P room does not modify subscription behavior.
-           */
-          enableAutomaticSubscription(enableAutomaticSubscription)
-        }
-        setDisconnectAction()
+  fun connectToRoom(roomName: String) {
+    audioSwitch.activate()
 
-      }
+    myRoom = connect(this.context, accessToken, roomListener) {
+      roomName(roomName)
+      /*
+       * Add local audio track to connect options to share with participants.
+       */
+      audioTracks(listOf(localAudioTrack))
+      /*
+       * Add local video track to connect options to share with participants.
+       */
+      videoTracks(listOf(localVideoTrack))
+
+      /*
+       * Set the preferred audio and video codec for media.
+       */
+      preferAudioCodecs(listOf(audioCodec))
+      preferVideoCodecs(listOf(videoCodec))
+
+      /*
+       * Set the sender side encoding parameters.
+       */
+      encodingParameters(encodingParameters)
+
+      /*
+       * Toggles automatic track subscription. If set to false, the LocalParticipant will receive
+       * notifications of track publish events, but will not automatically subscribe to them. If
+       * set to true, the LocalParticipant will automatically subscribe to tracks as they are
+       * published. If unset, the default is true. Note: This feature is only available for Group
+       * Rooms. Toggling the flag in a P2P room does not modify subscription behavior.
+       */
+      enableAutomaticSubscription(enableAutomaticSubscription)
     }
+    setDisconnectAction()
   }
 
   /*
    * The initial state when there is no active room.
    */
+  fun initializeUI() {
+
+    mConnectActionFab!!.setImageDrawable(
+      ContextCompat.getDrawable(
+        this.context,
+        R.drawable.ic_video_call_white_24dp
+      )
+    )
+    mConnectActionFab!!.show()
+    mConnectActionFab!!.setOnClickListener(connectActionClickListener())
+    mSwitchCameraActionFab!!.show()
+    mSwitchCameraActionFab!!.setOnClickListener(switchCameraClickListener())
+    mLocalVideoActionFab!!.show()
+    mLocalVideoActionFab!!.setOnClickListener(localVideoClickListener())
+    mMuteActionFab!!.show()
+    mMuteActionFab!!.setOnClickListener(muteClickListener())
+  }
 
   /*
    * Show the current available audio devices.
@@ -694,8 +743,27 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   /*
    * The actions performed during disconnect.
    */
-  public fun setDisconnectAction() {
-    disconnectClickListener()
+  private fun setDisconnectAction() {
+    mConnectActionFab!!.setImageDrawable(
+      ContextCompat.getDrawable(
+        this.context,
+        R.drawable.ic_call_end_white_24px
+      )
+    )
+    mConnectActionFab!!.show()
+    mConnectActionFab!!.setOnClickListener(disconnectClickListener())
+  }
+
+  /*
+   * Creates an connect UI dialog
+   */
+  private fun showConnectDialog() {
+    val roomEditText = EditText(this.context)
+    alertDialog = createConnectDialog(
+      roomEditText,
+      connectClickListener(roomEditText), cancelConnectDialogClickListener(), this.context
+    )
+    alertDialog?.show()
   }
 
   /*
@@ -706,26 +774,31 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
      * This app only displays video for one additional participant per Room
      */
 
-    if(mAccessToken !=null){
-      if(mAccessToken!!.isNotEmpty()){
-        if (mPrimaryVideoView!!.visibility == View.VISIBLE) {
-          return
-        }
-        participantIdentity = remoteParticipant.identity
-        mVideoStatusTextView!!.text = "Participant $participantIdentity joined"
+    if (mPrimaryVideoView!!.visibility == View.VISIBLE) {
+      Snackbar.make(
+        mConnectActionFab!!,
+        "Multiple participants are not currently support in this UI",
+        Snackbar.LENGTH_LONG
+      )
+        .setAction("Action", null).show()
+      return
+    }
+    participantIdentity = remoteParticipant.identity
+    mVideoStatusTextView!!.text = "Participant $participantIdentity joined"
 
-        /*
-         * Add participant renderer
-         */
-        remoteParticipant.remoteVideoTracks.firstOrNull()?.let { remoteVideoTrackPublication ->
-          if (remoteVideoTrackPublication.isTrackSubscribed) {
-            remoteVideoTrackPublication.remoteVideoTrack?.let { addRemoteParticipantVideo(it) }
-          }
-        }
-        remoteParticipant.setListener(participantListener)
+    /*
+     * Add participant renderer
+     */
+    remoteParticipant.remoteVideoTracks.firstOrNull()?.let { remoteVideoTrackPublication ->
+      if (remoteVideoTrackPublication.isTrackSubscribed) {
+        remoteVideoTrackPublication.remoteVideoTrack?.let { addRemoteParticipantVideo(it) }
       }
     }
 
+    /*
+     * Start listening for participant events
+     */
+    remoteParticipant.setListener(participantListener)
   }
 
   /*
@@ -786,12 +859,13 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
         CameraCapturerCompat.Source.FRONT_CAMERA
     }
   }
-  fun setAccessToken(accessToken: String?) {
-    if(accessToken!=null){
-      if(accessToken.isNotEmpty()){
-        this.mAccessToken=accessToken;
 
-      }
+  private fun connectClickListener(roomEditText: EditText): DialogInterface.OnClickListener {
+    return DialogInterface.OnClickListener { _, _ ->
+      /*
+       * Connect to room
+       */
+      connectToRoom(roomEditText.text.toString())
     }
   }
 
@@ -801,8 +875,21 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
        * Disconnect from room
        */
       myRoom?.disconnect()
+      initializeUI()
     }
   }
+
+  private fun connectActionClickListener(): View.OnClickListener {
+    return View.OnClickListener { showConnectDialog() }
+  }
+
+  private fun cancelConnectDialogClickListener(): DialogInterface.OnClickListener {
+    return DialogInterface.OnClickListener { _, _ ->
+      initializeUI()
+      alertDialog?.dismiss()
+    }
+  }
+
   private fun switchCameraClickListener(): View.OnClickListener {
     return View.OnClickListener {
       val cameraSource = cameraCapturerCompat.cameraSource
@@ -815,12 +902,27 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     }
   }
 
-  private fun localVideoClickListener() {
-
+  private fun localVideoClickListener(): View.OnClickListener {
+    return View.OnClickListener {
+      /*
+       * Enable/disable the local video track
+       */
       localVideoTrack?.let {
         val enable = !it.isEnabled
         it.enable(enable)
+        val icon: Int
+        if (enable) {
+          icon = R.drawable.ic_videocam_white_24dp
+          mSwitchCameraActionFab!!.show()
+        } else {
+          icon = R.drawable.ic_videocam_off_black_24dp
+          mSwitchCameraActionFab!!.hide()
+        }
+        mLocalVideoActionFab!!.setImageDrawable(
+          ContextCompat.getDrawable(this.context, icon)
+        )
       }
+    }
   }
 
   private fun muteClickListener(): View.OnClickListener {
@@ -837,25 +939,112 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
           R.drawable.ic_mic_white_24dp
         else
           R.drawable.ic_mic_off_black_24dp
-     /*   mMuteActionFab!!.setImageDrawable(
+        mMuteActionFab!!.setImageDrawable(
           ContextCompat.getDrawable(
             this.context, icon
           )
-        )*/
+        )
       }
     }
+  }
+
+  private fun retrieveAccessTokenfromServer() {
+    Ion.with(this.context)
+      .load("$ACCESS_TOKEN_SERVER?identity=${UUID.randomUUID()}")
+      .asString()
+      .setCallback { e, token ->
+        if (e == null) {
+          this.accessToken = token
+        } else {
+          Toast.makeText(
+            this.context,
+            R.string.error_retrieving_access_token, Toast.LENGTH_LONG
+          )
+            .show()
+        }
+      }
+  }
+
+  private fun createConnectDialog(
+    participantEditText: EditText,
+    callParticipantsClickListener: DialogInterface.OnClickListener,
+    cancelClickListener: DialogInterface.OnClickListener,
+    context: Context
+  ): AlertDialog {
+    val alertDialogBuilder = AlertDialog.Builder(context).apply {
+      setIcon(R.drawable.ic_video_call_white_24dp)
+      setTitle("Connect to a room")
+      setPositiveButton("Connect", callParticipantsClickListener)
+      setNegativeButton("Cancel", cancelClickListener)
+      setCancelable(false)
+    }
+
+    setRoomNameFieldInDialog(participantEditText, alertDialogBuilder, context)
+
+    return alertDialogBuilder.create()
+  }
+
+  @SuppressLint("RestrictedApi")
+  private fun setRoomNameFieldInDialog(
+    roomNameEditText: EditText,
+    alertDialogBuilder: AlertDialog.Builder,
+    context: Context
+  ) {
+    roomNameEditText.hint = "room name"
+    val horizontalPadding =
+      context.resources.getDimensionPixelOffset(R.dimen.activity_horizontal_margin)
+    val verticalPadding =
+      context.resources.getDimensionPixelOffset(R.dimen.activity_vertical_margin)
+    alertDialogBuilder.setView(
+      roomNameEditText,
+      horizontalPadding,
+      verticalPadding,
+      horizontalPadding,
+      0
+    )
+  }
+
+  fun requestPermissions(
+    grantResults: IntArray
+  ) {
+    /*
+     * The first two permissions are Camera & Microphone, bluetooth isn't required but
+     * enabling it enables bluetooth audio routing functionality.
+     */
+    val cameraAndMicPermissionGranted =
+      ((PackageManager.PERMISSION_GRANTED == grantResults[CAMERA_PERMISSION_INDEX])
+        and (PackageManager.PERMISSION_GRANTED == grantResults[MIC_PERMISSION_INDEX]))
+
+    /*
+     * Due to bluetooth permissions being requested at the same time as camera and mic
+     * permissions, AudioSwitch should be started after providing the user the option
+     * to grant the necessary permissions for bluetooth.
+     */
+    audioSwitch.start { audioDevices, audioDevice -> updateAudioDeviceIcon(audioDevice) }
+
+    if (cameraAndMicPermissionGranted) {
+      createAudioAndVideoTracks()
+    } else {
+      Toast.makeText(
+        this.myActivity,
+        R.string.permissions_needed,
+        Toast.LENGTH_LONG
+      ).show()
+    }
+
   }
 
   override fun getLifecycle(): Lifecycle {
     return lifecycleRegistry
   }
-   fun onPause(owner: LifecycleOwner) {
+
+  fun onPause(owner: LifecycleOwner) {
     localVideoTrack?.let { myLocalParticipant?.unpublishTrack(it) }
     localVideoTrack?.release()
     localVideoTrack = null
   }
 
-   fun onDestroy(owner: LifecycleOwner) {
+  fun onDestroy(owner: LifecycleOwner) {
     audioSwitch.stop()
     myActivity!!.volumeControlStream = savedVolumeControlStream
     myRoom?.disconnect()
@@ -865,7 +1054,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
 
-   fun onCreateOptionsMenu(menu: Menu): Boolean {
+  fun onCreateOptionsMenu(menu: Menu): Boolean {
     val inflater = myActivity!!.menuInflater
     inflater.inflate(R.menu.menu, menu)
     audioDeviceMenuItem = menu.findItem(R.id.menu_audio_device)
@@ -877,8 +1066,11 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
 
-
-  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?): Boolean {
+  override fun onRequestPermissionsResult(
+    requestCode: Int,
+    permissions: Array<out String>?,
+    grantResults: IntArray?
+  ): Boolean {
     if (requestCode == CAMERA_MIC_PERMISSION_REQUEST_CODE) {
       /*
        * The first two permissions are Camera & Microphone, bluetooth isn't required but
@@ -907,7 +1099,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
         ).show()
       }
     }
-    return  ((PackageManager.PERMISSION_GRANTED == grantResults!![CAMERA_PERMISSION_INDEX])
+    return ((PackageManager.PERMISSION_GRANTED == grantResults!![CAMERA_PERMISSION_INDEX])
       and (PackageManager.PERMISSION_GRANTED == grantResults[MIC_PERMISSION_INDEX]))
   }
 }

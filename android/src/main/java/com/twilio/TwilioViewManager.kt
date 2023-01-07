@@ -13,6 +13,8 @@ class TwilioViewManager : SimpleViewManager<View>() {
   override fun getName() = "TwilioView"
 
   var myTrackSid: String? = ""
+  var mRoomName: String? = null
+
   override fun createViewInstance(reactContext: ThemedReactContext): NativeView {
     val permissionAwareActivity = reactContext.currentActivity as PermissionAwareActivity?
     return reactContext.currentActivity?.let {
@@ -24,11 +26,17 @@ class TwilioViewManager : SimpleViewManager<View>() {
 
   @ReactProp(name = "accessToken")
   fun setAccessToken(view: NativeView,accessToken: String?) {
-    if(accessToken!=null){
-      if(accessToken.isNotEmpty()){
-        view.setAccessToken(accessToken)
-        //TODO ======= test connect
-        view.connectToRoom("testname")
+    if(view!=null){
+      if(accessToken!=null){
+        if(accessToken.isNotEmpty()){
+          view.setAccessToken(accessToken)
+          //TODO ======= test connect
+          if(mRoomName!=null){
+            if(mRoomName!!.isNotEmpty()){
+              view.connectToRoom(mRoomName!!)
+            }
+          }
+        }
       }
     }
   }
@@ -42,22 +50,7 @@ class TwilioViewManager : SimpleViewManager<View>() {
     if(roomName!=null){
       if(roomName.isNotEmpty()){
         view.connectToRoom(roomName)
-
       }
-    }
-  }
-
-  @ReactProp(name = "trackSid")
-  fun setTrackId(view: NativeView,trackSid: String?) {
-    if(trackSid!=null){
-      Log.i("CustomTwilioVideoView", "Initialize Twilio REMOTE")
-      Log.i("CustomTwilioVideoView", trackSid)
-      myTrackSid = trackSid
-      if(trackSid.isNotEmpty()){
-        view.registerTrackIdVideoView(trackSid)
-
-      }
-
     }
   }
 }
