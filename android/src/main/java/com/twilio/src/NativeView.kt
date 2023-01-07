@@ -26,6 +26,7 @@ import com.twilio.audioswitch.AudioDevice
 import com.twilio.audioswitch.AudioDevice.*
 import com.twilio.audioswitch.AudioSwitch
 import com.twilio.video.*
+import com.twilio.R
 import com.twilio.video.VideoView
 import com.twilio.video.ktx.Video.connect
 import com.twilio.video.ktx.createLocalAudioTrack
