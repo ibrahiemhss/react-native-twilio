@@ -46,7 +46,6 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   private val TAG = "MainActivity"
   private val CAMERA_PERMISSION_INDEX = 0
   private val MIC_PERMISSION_INDEX = 1
-  private val ACCESS_TOKEN_SERVER =  "http://localhost:3000";//TODO WANT CHANGE===============
    private  var mAccessToken: String?=null
   public var myRoom: Room? = null
   public var myActivity: Activity? = null
@@ -130,6 +129,9 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
         View.VISIBLE
       mVideoStatusTextView!!.text = "Connected to ${it.name}"
     }*/
+
+    //TODO ======= test connect
+    connectToRoom("testRomeName")
   }
 
   /*
@@ -845,53 +847,6 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
         )*/
       }
     }
-  }
-
-  private fun retrieveAccessTokenfromServer() {
-    Ion.with(this.context)
-      .load("$ACCESS_TOKEN_SERVER?identity=${UUID.randomUUID()}")
-      .asString()
-      .setCallback { e, token ->
-        if (e == null) {
-          this.mAccessToken = token
-        } else {
-          Toast.makeText(
-            this.context,
-            R.string.error_retrieving_access_token, Toast.LENGTH_LONG
-          )
-            .show()
-        }
-      }
-  }
-
-   fun requestPermissions(
-    grantResults: IntArray
-  ) {
-      /*
-       * The first two permissions are Camera & Microphone, bluetooth isn't required but
-       * enabling it enables bluetooth audio routing functionality.
-       */
-      val cameraAndMicPermissionGranted =
-        ((PackageManager.PERMISSION_GRANTED == grantResults[CAMERA_PERMISSION_INDEX])
-          and (PackageManager.PERMISSION_GRANTED == grantResults[MIC_PERMISSION_INDEX]))
-
-      /*
-       * Due to bluetooth permissions being requested at the same time as camera and mic
-       * permissions, AudioSwitch should be started after providing the user the option
-       * to grant the necessary permissions for bluetooth.
-       */
-     audioSwitch.start { audioDevices, audioDevice ->updateAudioDeviceIcon(audioDevice) }
-
-      if (cameraAndMicPermissionGranted) {
-       createAudioAndVideoTracks()
-      } else {
-        Toast.makeText(
-          this.myActivity,
-          R.string.permissions_needed,
-          Toast.LENGTH_LONG
-        ).show()
-      }
-
   }
 
   override fun getLifecycle(): Lifecycle {

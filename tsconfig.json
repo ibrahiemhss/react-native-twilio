@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "react-native-twillio": ["./src/index"]
+      "react-native-twilio": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
