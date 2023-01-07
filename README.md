@@ -1,21 +1,21 @@
-# react-native-twilio
+# react-native-twillio
 
-twilio call provider
+twillio call provider
 
 ## Installation
 
 ```sh
-npm install react-native-twilio
+npm install react-native-twillio
 ```
 
 ## Usage
 
 ```js
-import { TwilioView } from "react-native-twilio";
+import { TwillioView } from "react-native-twillio";
 
 // ...
 
-<TwilioView color="tomato" />
+<TwillioView color="tomato" />
 ```
 
 ## Contributing

@@ -3,8 +3,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.content.DialogInterface
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Build
@@ -21,15 +19,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.preference.PreferenceManager
-import com.facebook.react.bridge.WritableArray
-import com.facebook.react.bridge.WritableMap
-import com.facebook.react.bridge.WritableNativeArray
-import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
-import com.facebook.react.uimanager.events.RCTEventEmitter
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
 import com.koushikdutta.ion.Ion
 import com.twilio.audioswitch.AudioDevice
 import com.twilio.audioswitch.AudioDevice.*
@@ -39,10 +30,7 @@ import com.twilio.video.VideoView
 import com.twilio.video.ktx.Video.connect
 import com.twilio.video.ktx.createLocalAudioTrack
 import com.twilio.video.ktx.createLocalVideoTrack
-import com.twilio.R
-import tvi.webrtc.RendererCommon
 import tvi.webrtc.VideoSink
-import tvi.webrtc.voiceengine.WebRtcAudioManager
 import java.util.*
 import kotlin.properties.Delegates
 
@@ -50,7 +38,6 @@ import kotlin.properties.Delegates
 @SuppressLint("MissingInflatedId")
 class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permissionAwareActivity:PermissionAwareActivity) :
   RelativeLayout(context) , PermissionListener, LifecycleOwner {
-  private var eventEmitter: RCTEventEmitter? = null
 
   private lateinit var lifecycleRegistry: LifecycleRegistry
 
@@ -65,8 +52,6 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   public var myPermissionAwareActivity: PermissionAwareActivity? = null
   public var myLocalParticipant: LocalParticipant? = null
   public var savedVolumeControlStream by Delegates.notNull<Int>()
-  private var scalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL
-  private val layoutSync = Any()
   var localAudioTrack: LocalAudioTrack? = null
   var localVideoTrack: LocalVideoTrack? = null
   var audioDeviceMenuItem: MenuItem? = null
@@ -75,13 +60,11 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   var disconnectedFromOnDestroy = false
   private var isSpeakerPhoneEnabled = true
   var mainView: View?=null
-  var mRoomName:String?= ""
 
   private var mReconnectingProgressBar : ProgressBar? = null
   private var mVideoStatusTextView : TextView? = null
   private var mPrimaryVideoView : VideoView? = null
-  private var videoWidth = 0
-  private var videoHeight = 0
+
 
   val cameraCapturerCompat by lazy {
     CameraCapturerCompat(this.context, CameraCapturerCompat.Source.FRONT_CAMERA)
@@ -974,300 +957,4 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     return  ((PackageManager.PERMISSION_GRANTED == grantResults!![CAMERA_PERMISSION_INDEX])
       and (PackageManager.PERMISSION_GRANTED == grantResults[MIC_PERMISSION_INDEX]))
   }
-
-  ///EVENTS
-  fun pushEvent(view: NativeView, name: String?, data: WritableMap?) {
-    eventEmitter!!.receiveEvent(view.id, name, data)
-  }
-  // ====== CONNECTING ===========================================================================
-  fun connectToRoomWrapper(
-    roomName: String?,
-    accessToken: String?,
-    enableAudio: Boolean,
-    enableVideo: Boolean,
-    enableRemoteAudio: Boolean,
-    enableNetworkQualityReporting: Boolean,
-    dominantSpeakerEnabled: Boolean,
-    maintainVideoTrackInBackground: Boolean,
-    cameraType: String,
-    enableH264Codec: Boolean
-  ) {
-    mAccessToken=accessToken;
-    if(roomName!=null){
-      mRoomName=roomName;
-      this.mAccessToken = accessToken!!
-      localAudioTrack?.let {
-        val enable = enableRemoteAudio
-        it.enable(enable)
-      }
-      //  this.enableRemoteAudio = enableRemoteAudio
-      // this.enableNetworkQualityReporting = enableNetworkQualityReporting
-      // this.dominantSpeakerEnabled = dominantSpeakerEnabled
-      // this.maintainVideoTrackInBackground = maintainVideoTrackInBackground
-      // this.cameraType = cameraType
-      val cameraSource = cameraCapturerCompat.cameraSource
-      mPrimaryVideoView!!.mirror = cameraSource.name == cameraType
-      // this.enableH264Codec = enableH264Codec
-
-      // Share your microphone
-      createAudioAndVideoTracks()
-      connectToRoom(roomName)
-    }
-  }
-
-  public  fun disconnect() {
-    myRoom?.disconnect()
-  }
-  public fun switchCamera(){
-
-    val cameraSource = cameraCapturerCompat.cameraSource
-    cameraCapturerCompat.switchCamera()
-    if (mPrimaryVideoView!!.visibility == View.VISIBLE) {
-      mPrimaryVideoView!!.mirror = cameraSource == CameraCapturerCompat.Source.BACK_CAMERA
-    } else {
-      mPrimaryVideoView!!.mirror = cameraSource == CameraCapturerCompat.Source.BACK_CAMERA
-    }
-    val event: WritableMap = WritableNativeMap()
-    event.putBoolean("videoEnabled", true)
-    pushEvent(this@NativeView, Events.ON_VIDEO_CHANGED, event)
-
-  }
-
-  public fun toggleVideo(enabled: Boolean) {
-
-    if (localVideoTrack != null) {
-      //localVideoTrack!!.enable(enabled)
-      localVideoTrack?.let {
-        val enable = enabled
-        it.enable(enable)
-      }
-      publishLocalVideo(enabled)
-      val event: WritableMap = WritableNativeMap()
-      event.putBoolean("videoEnabled", enabled)
-      pushEvent(this, Events.ON_VIDEO_CHANGED, event)
-    }
-  }
-
-  fun toggleAudio(enabled: Boolean) {
-    if (localAudioTrack != null) {
-      localAudioTrack!!.enable(enabled)
-      publishLocalAudio(enabled)
-      val event: WritableMap = WritableNativeMap()
-      event.putBoolean("audioEnabled", enabled)
-      pushEvent(this, Events.ON_AUDIO_CHANGED, event)
-    }
-  }
-  private fun convertBaseTrackStats(bs: BaseTrackStats, result: WritableMap) {
-    result.putString("codec", bs.codec)
-    result.putInt("packetsLost", bs.packetsLost)
-    result.putString("ssrc", bs.ssrc)
-    result.putDouble("timestamp", bs.timestamp)
-    result.putString("trackSid", bs.trackSid)
-  }
-
-  private fun convertLocalTrackStats(ts: LocalTrackStats, result: WritableMap) {
-    result.putDouble("bytesSent", ts.bytesSent.toDouble())
-    result.putInt("packetsSent", ts.packetsSent)
-    result.putDouble("roundTripTime", ts.roundTripTime.toDouble())
-  }
-
-  private fun convertRemoteTrackStats(ts: RemoteTrackStats, result: WritableMap) {
-    result.putDouble("bytesReceived", ts.bytesReceived.toDouble())
-    result.putInt("packetsReceived", ts.packetsReceived)
-  }
-
-  private fun convertAudioTrackStats(`as`: RemoteAudioTrackStats): WritableMap {
-    val result: WritableMap = WritableNativeMap()
-    result.putInt("audioLevel", `as`.audioLevel)
-    result.putInt("jitter", `as`.jitter)
-    convertBaseTrackStats(`as`, result)
-    convertRemoteTrackStats(`as`, result)
-    return result
-  }
-
-  private fun convertLocalAudioTrackStats(`as`: LocalAudioTrackStats): WritableMap {
-    val result: WritableMap = WritableNativeMap()
-    result.putInt("audioLevel", `as`.audioLevel)
-    result.putInt("jitter", `as`.jitter)
-    convertBaseTrackStats(`as`, result)
-    convertLocalTrackStats(`as`, result)
-    return result
-  }
-
-  private fun convertVideoTrackStats(vs: RemoteVideoTrackStats): WritableMap {
-    val result: WritableMap = WritableNativeMap()
-    val dimensions: WritableMap = WritableNativeMap()
-    dimensions.putInt("height", vs.dimensions.height)
-    dimensions.putInt("width", vs.dimensions.width)
-    result.putMap("dimensions", dimensions)
-    result.putInt("frameRate", vs.frameRate)
-    convertBaseTrackStats(vs, result)
-    convertRemoteTrackStats(vs, result)
-    return result
-  }
-
-  private fun convertLocalVideoTrackStats(vs: LocalVideoTrackStats): WritableMap {
-    val result: WritableMap = WritableNativeMap()
-    val dimensions: WritableMap = WritableNativeMap()
-    dimensions.putInt("height", vs.dimensions.height)
-    dimensions.putInt("width", vs.dimensions.width)
-    result.putMap("dimensions", dimensions)
-    result.putInt("frameRate", vs.frameRate)
-    convertBaseTrackStats(vs, result)
-    convertLocalTrackStats(vs, result)
-    return result
-  }
-
-  val stats: Unit
-    get() {
-      if (myRoom != null) {
-        myRoom!!.getStats { statsReports ->
-          val event: WritableMap = WritableNativeMap()
-          for (sr in statsReports) {
-            val connectionStats: WritableMap = WritableNativeMap()
-            val `as`: WritableArray = WritableNativeArray()
-            for (s in sr.remoteAudioTrackStats) {
-              `as`.pushMap(convertAudioTrackStats(s))
-            }
-            connectionStats.putArray("remoteAudioTrackStats", `as`)
-            val vs: WritableArray = WritableNativeArray()
-            for (s in sr.remoteVideoTrackStats) {
-              vs.pushMap(convertVideoTrackStats(s))
-            }
-            connectionStats.putArray("remoteVideoTrackStats", vs)
-            val las: WritableArray = WritableNativeArray()
-            for (s in sr.localAudioTrackStats) {
-              las.pushMap(convertLocalAudioTrackStats(s))
-            }
-            connectionStats.putArray("localAudioTrackStats", las)
-            val lvs: WritableArray = WritableNativeArray()
-            for (s in sr.localVideoTrackStats) {
-              lvs.pushMap(convertLocalVideoTrackStats(s))
-            }
-            connectionStats.putArray("localVideoTrackStats", lvs)
-            event.putMap(sr.peerConnectionId, connectionStats)
-          }
-          pushEvent(this, Events.ON_STATS_RECEIVED, event)
-        }
-      }
-    }
-  fun disableOpenSLES() {
-    WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(true)
-  }
-  fun toggleSoundSetup(speaker: Boolean) {
-    val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    if (speaker) {
-      audioManager.isSpeakerphoneOn = true
-    } else {
-      audioManager.isSpeakerphoneOn = false
-    }
-  }
-
-  fun toggleRemoteAudio(enabled: Boolean) {
-    if (myRoom != null) {
-      for (rp in myRoom!!.remoteParticipants) {
-        for (at in rp.audioTracks) {
-          if (at.audioTrack != null) {
-            (at.audioTrack as RemoteAudioTrack?)!!.enablePlayback(enabled)
-          }
-        }
-      }
-    }
-  }
-  fun releaseResource() {
-    //  mPrimaryVideoView!!.removeLifecycleEventListener(this)
-    audioSwitch.stop()
-    myActivity!!.volumeControlStream = savedVolumeControlStream
-    myRoom?.disconnect()
-    disconnectedFromOnDestroy = true
-    localAudioTrack?.release()
-    localVideoTrack?.release()
-  }
-
-  fun sendString(message: String?) {
-    /* if (localDataTrack != null) {
-       localDataTrack!!.send(message!!)
-     }*/
-  }
-  fun publishLocalVideo(enabled: Boolean) {
-    if (myLocalParticipant != null && localVideoTrack != null) {
-      if (enabled) {
-        myLocalParticipant!!.publishTrack(localVideoTrack!!)
-      } else {
-        myLocalParticipant!!.unpublishTrack(localVideoTrack!!)
-      }
-    }
-  }
-
-  fun publishLocalAudio(enabled: Boolean) {
-    if (myLocalParticipant != null && localAudioTrack != null) {
-      if (enabled) {
-        myLocalParticipant!!.publishTrack(localAudioTrack!!)
-      } else {
-        myLocalParticipant!!.unpublishTrack(localAudioTrack!!)
-      }
-    }
-  }
-
-  // ------
-  fun applyZOrder(applyZOrder: Boolean) {
-    mPrimaryVideoView!!.applyZOrder(applyZOrder)
-  }
-  fun setScalingType(scalingType: RendererCommon.ScalingType) {
-    this.scalingType = scalingType
-  }
-
-  fun registerPrimaryVideoView( trackSid: String) {
-    if (myRoom != null) {
-      for (participant in myRoom!!.remoteParticipants) {
-        for (publication in participant.remoteVideoTracks) {
-          val track = publication.remoteVideoTrack ?: continue
-          if (publication.trackSid == trackSid) {
-            track.addSink(mPrimaryVideoView!!)
-          } else {
-            track.removeSink(mPrimaryVideoView!!)
-          }
-        }
-      }
-    }
-  }
-
-  override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-    var l = l
-    var t = t
-    var r = r
-    var b = b
-    val height = b - t
-    val width = r - l
-    if (height == 0 || width == 0) {
-      b = 0
-      r = b
-      t = r
-      l = t
-    } else {
-      var videoHeight: Int
-      var videoWidth: Int
-      synchronized(layoutSync) {
-        videoHeight = this.videoHeight
-        videoWidth = this.videoWidth
-      }
-      if (videoHeight == 0 || videoWidth == 0) {
-        // These are Twilio defaults.
-        videoHeight = 480
-        videoWidth = 640
-      }
-      val displaySize = RendererCommon.getDisplaySize(
-        scalingType,
-        videoWidth / videoHeight.toFloat(),
-        width,
-        height
-      )
-      l = (width - displaySize.x) / 2
-      t = (height - displaySize.y) / 2
-      r = l + displaySize.x
-      b = t + displaySize.y
-    }
-    mPrimaryVideoView!!.layout(l, t, r, b)
-  }
-
 }
