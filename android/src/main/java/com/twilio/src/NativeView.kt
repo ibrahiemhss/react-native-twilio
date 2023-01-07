@@ -129,9 +129,6 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
         View.VISIBLE
       mVideoStatusTextView!!.text = "Connected to ${it.name}"
     }*/
-
-    //TODO ======= test connect
-    connectToRoom("testRomeName")
   }
 
   /*

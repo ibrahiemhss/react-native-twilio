@@ -27,7 +27,8 @@ class TwilioViewManager : SimpleViewManager<View>() {
     if(accessToken!=null){
       if(accessToken.isNotEmpty()){
         view.setAccessToken(accessToken)
-
+        //TODO ======= test connect
+        view.connectToRoom("testname")
       }
     }
   }
