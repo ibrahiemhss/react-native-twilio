@@ -7,8 +7,8 @@ import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.twillio.src.Events
-import com.twillio.src.NativeView
+import com.twilio.src.Events
+import com.twilio.src.NativeView
 import tvi.webrtc.RendererCommon
 
 class TwilioLocaleViewManager : SimpleViewManager<NativeView>() {
@@ -16,7 +16,7 @@ class TwilioLocaleViewManager : SimpleViewManager<NativeView>() {
   override fun createViewInstance(reactContext: ThemedReactContext): NativeView {
     val permissionAwareActivity = reactContext.currentActivity as PermissionAwareActivity?
     return reactContext.currentActivity?.let {
-      NativeView(reactContext, true,
+      NativeView(reactContext, false,
         it,permissionAwareActivity!!)
     }!!
 

@@ -14,8 +14,8 @@ import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.annotations.ReactProp
 import tvi.webrtc.RendererCommon
 import com.facebook.react.uimanager.ThemedReactContext
-import com.twillio.src.Events
-import com.twillio.src.NativeView
+import com.twilio.src.Events
+import com.twilio.src.NativeView
 
 class TwilioRemotePreviewManager : SimpleViewManager<NativeView>() {
     var myTrackSid: String? = ""

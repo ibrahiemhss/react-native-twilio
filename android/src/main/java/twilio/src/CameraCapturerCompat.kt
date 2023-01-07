@@ -1,4 +1,4 @@
-package com.twillio.src
+package com.twilio.src
 
 import android.annotation.TargetApi
 import android.content.Context

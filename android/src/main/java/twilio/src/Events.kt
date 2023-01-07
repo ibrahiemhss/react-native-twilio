@@ -1,4 +1,4 @@
-package com.twillio.src
+package com.twilio.src
 
 class Events {
   companion object {

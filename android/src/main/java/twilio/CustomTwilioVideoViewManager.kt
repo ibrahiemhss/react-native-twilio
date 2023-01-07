@@ -5,8 +5,8 @@ import com.facebook.react.common.MapBuilder
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
-import com.twillio.src.Events
-import com.twillio.src.NativeView
+import com.twilio.src.Events
+import com.twilio.src.NativeView
 
 class CustomTwilioVideoViewManager : SimpleViewManager<NativeView?>() {
   override fun getName(): String {

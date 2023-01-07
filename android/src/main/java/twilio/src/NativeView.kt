@@ -1,4 +1,4 @@
-package com.twillio.src
+package com.twilio.src
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -39,7 +39,7 @@ import com.twilio.video.VideoView
 import com.twilio.video.ktx.Video.connect
 import com.twilio.video.ktx.createLocalAudioTrack
 import com.twilio.video.ktx.createLocalVideoTrack
-import com.twillio.R
+import com.twilio.R
 import tvi.webrtc.RendererCommon
 import tvi.webrtc.VideoSink
 import tvi.webrtc.voiceengine.WebRtcAudioManager
@@ -976,7 +976,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
   ///EVENTS
-  fun pushEvent(view: View, name: String?, data: WritableMap?) {
+  fun pushEvent(view: NativeView, name: String?, data: WritableMap?) {
     eventEmitter!!.receiveEvent(view.id, name, data)
   }
   // ====== CONNECTING ===========================================================================
