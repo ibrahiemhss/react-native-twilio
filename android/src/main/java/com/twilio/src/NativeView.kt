@@ -1,4 +1,5 @@
 package com.twilio.src
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -7,7 +8,7 @@ import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Build
-import android.util.JsonToken
+import android.os.Parcelable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -26,11 +27,11 @@ import com.facebook.react.modules.core.PermissionListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.koushikdutta.ion.Ion
+import com.twilio.R
 import com.twilio.audioswitch.AudioDevice
 import com.twilio.audioswitch.AudioDevice.*
 import com.twilio.audioswitch.AudioSwitch
 import com.twilio.video.*
-import com.twilio.R
 import com.twilio.video.VideoView
 import com.twilio.video.ktx.Video.connect
 import com.twilio.video.ktx.createLocalAudioTrack
@@ -41,18 +42,17 @@ import kotlin.properties.Delegates
 
 
 @SuppressLint("MissingInflatedId")
-class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permissionAwareActivity:PermissionAwareActivity) :
+class NativeView(context: Context, isFromReact: Boolean, activity: Activity, permissionAwareActivity:PermissionAwareActivity) :
   RelativeLayout(context) , PermissionListener, LifecycleOwner {
 
   private lateinit var lifecycleRegistry: LifecycleRegistry
 
   private val CAMERA_MIC_PERMISSION_REQUEST_CODE = 1
-  private val TAG = "MainActivity"
+  private val TAG = "NativeViewTwilio"
   private val CAMERA_PERMISSION_INDEX = 0
   private val MIC_PERMISSION_INDEX = 1
-  private val ACCESS_TOKEN_SERVER = "http://localhost:3000";//TODO WANT CHANGE===============
-  private val TWILIO_ACCESS_TOKEN =
-    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTS2M5MmRiYzYzNTliYjk0NzU4ZDdkZmUyNTNiYThkNjhmLTE2NzA1MTc2MzgiLCJpc3MiOiJTS2M5MmRiYzYzNTliYjk0NzU4ZDdkZmUyNTNiYThkNjhmIiwic3ViIjoiQUNhYzUzNWZlOTczMmYwNTVhOWJiOTY4N2U4OTdkYjk1ZiIsImV4cCI6MTY3MDUyMTIzOCwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcl9hNSIsInZpZGVvIjp7InJvb20iOiJnb29kX3Jvb20ifX19.rt4z1-gfTBAAtzIGX-h_ZXPrT1BwSpfkw82MGhAKY10"
+  private val ACCESS_TOKEN_SERVER = ""
+  //private val TWILIO_ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzMyMTc0MDkiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3MzIyMTAwOSwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjEzIiwidmlkZW8iOnsicm9vbSI6InJvb20xIn19fQ.yaJy2GIool_kmNjVDzwLCEt9ti8IplKCLAOEZDdNHps"
   private lateinit var accessToken: String
   public var myRoom: Room? = null
   public var myActivity: Activity? = null
@@ -109,6 +109,8 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     mMuteActionFab = mainView!!.findViewById<View>(R.id.muteActionFab) as FloatingActionButton?
     mThumbnailVideoView = mainView!!.findViewById<View>(R.id.thumbnailVideoView) as VideoView?
     mPrimaryVideoView = mainView!!.findViewById<View>(R.id.primaryVideoView) as VideoView?
+    mThumbnailVideoView!!.visibility= INVISIBLE
+
 
     //-------------------------------------------------
 
@@ -118,7 +120,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
 
     savedVolumeControlStream = myActivity!!.volumeControlStream
     myActivity!!.volumeControlStream = AudioManager.STREAM_VOICE_CALL
-    setAccessToken(TWILIO_ACCESS_TOKEN)
+    //setAccessToken(TWILIO_ACCESS_TOKEN)
     if (!checkPermissionForCameraAndMicrophone()) {
       requestPermissionForCameraMicrophoneAndBluetooth()
     } else {
@@ -186,18 +188,9 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     }
   private val videoCodec: VideoCodec
     get() {
-      // TODO CHANGES ---------
-      /* val videoCodecName = sharedPreferences.getString(
-         TwilioSettingsActivity.PREF_VIDEO_CODEC,
-         TwilioSettingsActivity.PREF_VIDEO_CODEC_DEFAULT
-       )*/
       val videoCodecName = Vp8Codec.NAME
       return when (videoCodecName) {
         Vp8Codec.NAME -> {
-          /* val simulcast = sharedPreferences.getBoolean(
-             TwilioSettingsActivity.PREF_VP8_SIMULCAST,
-             TwilioSettingsActivity.PREF_VP8_SIMULCAST_DEFAULT
-           )*/
           Vp8Codec(false)
         }
         H264Codec.NAME -> H264Codec()
@@ -208,8 +201,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
 
   private val enableAutomaticSubscription: Boolean
     get() {
-      //TODO WANT TRUE OR FALSE AS WANTED
-      return false
+      return true
     }
 
   /*
@@ -279,6 +271,12 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     }
 
     override fun onParticipantConnected(room: Room, participant: RemoteParticipant) {
+      Log.d(TAG, "got this al leat")
+      addRemoteParticipant(participant)
+    }
+
+    override fun onParticipantReconnected(room: Room, participant: RemoteParticipant) {
+      Log.d(TAG, "got this al leat then")
       addRemoteParticipant(participant)
     }
 
@@ -758,10 +756,13 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
    * Creates an connect UI dialog
    */
   private fun showConnectDialog() {
+    val tokenEditText = EditText(this.context)
     val roomEditText = EditText(this.context)
+
     alertDialog = createConnectDialog(
+      tokenEditText,
       roomEditText,
-      connectClickListener(roomEditText), cancelConnectDialogClickListener(), this.context
+      connectClickListener(tokenEditText,roomEditText), cancelConnectDialogClickListener(), this.context
     )
     alertDialog?.show()
   }
@@ -774,7 +775,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
      * This app only displays video for one additional participant per Room
      */
 
-    if (mPrimaryVideoView!!.visibility == View.VISIBLE) {
+    if (mThumbnailVideoView!!.visibility == View.VISIBLE) {
       Snackbar.make(
         mConnectActionFab!!,
         "Multiple participants are not currently support in this UI",
@@ -784,7 +785,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
       return
     }
     participantIdentity = remoteParticipant.identity
-    mVideoStatusTextView!!.text = "Participant $participantIdentity joined"
+    mVideoStatusTextView!!.text = "z Participant $participantIdentity joined"
 
     /*
      * Add participant renderer
@@ -792,6 +793,10 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     remoteParticipant.remoteVideoTracks.firstOrNull()?.let { remoteVideoTrackPublication ->
       if (remoteVideoTrackPublication.isTrackSubscribed) {
         remoteVideoTrackPublication.remoteVideoTrack?.let { addRemoteParticipantVideo(it) }
+      } else {
+        Log.i(
+          TAG, "wow in the else: " + remoteVideoTrackPublication.isTrackSubscribed
+        )
       }
     }
 
@@ -811,14 +816,20 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
   private fun moveLocalVideoToThumbnailView() {
-    if (mPrimaryVideoView!!.visibility == View.GONE) {
-      mPrimaryVideoView!!.visibility = View.VISIBLE
+    Log.i(
+      TAG, "moveLocalVideoToThumbnailView"
+    )
+    if (mThumbnailVideoView!!.visibility == View.INVISIBLE) {
+      Log.i(
+        TAG, "moveLocalVideoToThumbnailView ==== 1"
+      )
+      mThumbnailVideoView!!.visibility = View.VISIBLE
       with(localVideoTrack) {
         this?.removeSink(mPrimaryVideoView!!)
-        this?.addSink(mPrimaryVideoView!!)
+        this?.addSink(mThumbnailVideoView!!)
       }
-      localVideoView = mPrimaryVideoView!!
-      mPrimaryVideoView!!.mirror = cameraCapturerCompat.cameraSource ==
+      localVideoView = mThumbnailVideoView!!
+      mThumbnailVideoView!!.mirror = cameraCapturerCompat.cameraSource ==
         CameraCapturerCompat.Source.FRONT_CAMERA
     }
   }
@@ -827,7 +838,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
    * Called when participant leaves the room
    */
   private fun removeRemoteParticipant(remoteParticipant: RemoteParticipant) {
-    mVideoStatusTextView!!.text = "Participant $remoteParticipant.identity left."
+    mVideoStatusTextView!!.text = "r Participant $remoteParticipant.identity left."
     if (remoteParticipant.identity != participantIdentity) {
       return
     }
@@ -848,10 +859,13 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
   private fun moveLocalVideoToPrimaryView() {
-    if (mPrimaryVideoView!!.visibility == View.VISIBLE) {
-      mPrimaryVideoView!!.visibility = View.GONE
+    Log.i(
+      TAG, "moveLocalVideoToThumbnailView"
+    )
+    if (mThumbnailVideoView!!.visibility == View.VISIBLE) {
+      mThumbnailVideoView!!.visibility = View.INVISIBLE
       with(localVideoTrack) {
-        this?.removeSink(mPrimaryVideoView!!)
+        this?.removeSink(mThumbnailVideoView!!)
         this?.addSink(mPrimaryVideoView!!)
       }
       localVideoView = mPrimaryVideoView!!
@@ -860,11 +874,12 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
     }
   }
 
-  private fun connectClickListener(roomEditText: EditText): DialogInterface.OnClickListener {
+  private fun connectClickListener(tokenEditText: EditText,roomEditText: EditText): DialogInterface.OnClickListener {
     return DialogInterface.OnClickListener { _, _ ->
       /*
        * Connect to room
        */
+      setAccessToken(tokenEditText.text.toString())
       connectToRoom(roomEditText.text.toString())
     }
   }
@@ -966,6 +981,7 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
   private fun createConnectDialog(
+    tokenEditText: EditText,
     participantEditText: EditText,
     callParticipantsClickListener: DialogInterface.OnClickListener,
     cancelClickListener: DialogInterface.OnClickListener,
@@ -979,24 +995,30 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
       setCancelable(false)
     }
 
-    setRoomNameFieldInDialog(participantEditText, alertDialogBuilder, context)
+    setRoomNameFieldInDialog(tokenEditText,participantEditText, alertDialogBuilder, context)
 
     return alertDialogBuilder.create()
   }
 
   @SuppressLint("RestrictedApi")
   private fun setRoomNameFieldInDialog(
+    tokenEditText: EditText,
     roomNameEditText: EditText,
     alertDialogBuilder: AlertDialog.Builder,
     context: Context
   ) {
     roomNameEditText.hint = "room name"
+    tokenEditText.hint = "token"
     val horizontalPadding =
       context.resources.getDimensionPixelOffset(R.dimen.activity_horizontal_margin)
     val verticalPadding =
       context.resources.getDimensionPixelOffset(R.dimen.activity_vertical_margin)
+    val ll = LinearLayout(context)
+    ll.orientation = LinearLayout.VERTICAL
+    ll.addView(tokenEditText)
+    ll.addView(roomNameEditText)
     alertDialogBuilder.setView(
-      roomNameEditText,
+      ll,
       horizontalPadding,
       verticalPadding,
       horizontalPadding,
@@ -1035,9 +1057,49 @@ class NativeView(context: Context,isFromReact: Boolean,activity: Activity,permis
   }
 
   override fun getLifecycle(): Lifecycle {
+    Log.d(TAG, "lifecycleRegistry=${lifecycleRegistry.currentState}")
     return lifecycleRegistry
+
+  }
+  override fun onStartTemporaryDetach() {
+    super.onStartTemporaryDetach()
+
+    Log.d(TAG, "onStartTemporaryDetach")
   }
 
+  override fun onAttachedToWindow() {
+    Log.d(TAG, "onAttachedToWindow")
+
+    super.onAttachedToWindow()
+  }
+
+  override fun onDetachedFromWindow() {
+    Log.d(TAG, "onAttachedToWindow")
+
+    super.onDetachedFromWindow()
+  }
+
+  override fun onFinishInflate() {
+    Log.d(TAG, "onFinishInflate")
+
+    super.onFinishInflate()
+  }
+
+  override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+    Log.d(TAG, "onLayout")
+
+    super.onLayout(changed, l, t, r, b)
+  }
+
+  override fun onViewAdded(child: View?) {
+    Log.d(TAG, "onViewAdded")
+    super.onViewAdded(child)
+  }
+
+  override fun onSaveInstanceState(): Parcelable? {
+    Log.d(TAG, "onSaveInstanceState")
+    return super.onSaveInstanceState()
+  }
   fun onPause(owner: LifecycleOwner) {
     localVideoTrack?.let { myLocalParticipant?.unpublishTrack(it) }
     localVideoTrack?.release()

@@ -1,7 +1,6 @@
 package com.twilio
 
 import android.graphics.Color
-import android.util.Log
 import android.view.View
 import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.uimanager.SimpleViewManager
@@ -12,45 +11,13 @@ import com.twilio.src.NativeView
 class TwilioViewManager : SimpleViewManager<View>() {
   override fun getName() = "TwilioView"
 
-  var myTrackSid: String? = ""
-  var mRoomName: String? = null
-
-  override fun createViewInstance(reactContext: ThemedReactContext): NativeView {
+  override fun createViewInstance(reactContext: ThemedReactContext): View {
     val permissionAwareActivity = reactContext.currentActivity as PermissionAwareActivity?
-    return reactContext.currentActivity?.let {
-      NativeView(reactContext, true,
-        it,permissionAwareActivity!!)
-    }!!
+    return NativeView(reactContext, true,reactContext.currentActivity!!,permissionAwareActivity!!)
 
   }
-
-  @ReactProp(name = "accessToken")
-  fun setAccessToken(view: NativeView,accessToken: String?) {
-    if(view!=null){
-      if(accessToken!=null){
-        if(accessToken.isNotEmpty()){
-          view.setAccessToken(accessToken)
-          //TODO ======= test connect
-          if(mRoomName!=null){
-            if(mRoomName!!.isNotEmpty()){
-              view.connectToRoom(mRoomName!!)
-            }
-          }
-        }
-      }
-    }
-  }
-  /* @ReactProp(name = "disconnect")
-   fun disconnect(view: NativeView) {
-     view.setDisconnectAction()
-   }
- */
-  @ReactProp(name = "roomName")
-  fun connectRom(view: NativeView,roomName: String?) {
-    if(roomName!=null){
-      if(roomName.isNotEmpty()){
-        view.connectToRoom(roomName)
-      }
-    }
+  @ReactProp(name = "color")
+  fun setColor(view: View, color: String) {
+    view.setBackgroundColor(Color.parseColor(color))
   }
 }
