@@ -98,12 +98,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     val inflater = LayoutInflater.from(context)
     mainView = inflater.inflate(R.layout.activity_video, this)
     //-------------------------------------------------
-    val sharedPref = mReactApplicationContext!!
-      .getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
-    val prefToken = sharedPref.getString(Constants.PREF_TOEKN, null)
-    this.accessToken= prefToken.toString();
-    Log.d(TAG, "accessToken ini init = ${this.accessToken}")
-
+    setAccessTokenFromPref()
     mReconnectingProgressBar =
       mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
     mVideoStatusTextView = mainView!!.findViewById<View>(R.id.videoStatusTextView) as TextView?
@@ -243,15 +238,41 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       mVideoStatusTextView!!.text = "Connected to ${room.name}"
       myActivity!!.title = room.name
 
+
+      val params = Arguments.createMap()
+      params.putString(Constants.ROOM_NAME, room.name)
+      params.putString(Constants.ROOM_SID, room.getSid())
+
+      val participants = room.remoteParticipants
+      val localParticipant = room.localParticipant
+      localParticipant!!.setListener(localListener())
+      val participantsArray: WritableArray = WritableNativeArray()
+      for (participant in participants) {
+        participantsArray.pushMap(buildParticipant(participant))
+      }
+      participantsArray.pushMap(buildParticipant(localParticipant))
+      params.putArray(Constants.PARTICIPANTS, participantsArray)
+      params.putMap(Constants.LOCAL_PARTICIPANT, buildParticipant(localParticipant))
+
+
+      sendEvent(reactApplicationContext, Constants.ON_CONNECTED, params)
+
       // Only one participant is supported
+      room.remoteParticipants.firstOrNull()?.let { addRemoteParticipant(it) }
+      for (participant in participants) {
+        addParticipant(room, participant!!)
+      }
+
       room.remoteParticipants.firstOrNull()?.let { addRemoteParticipant(it) }
     }
 
     override fun onReconnected(room: Room) {
 
+      mVideoStatusTextView!!.text = "Connected to ${room.name}"
       val params = Arguments.createMap()
-      params.putString(Constants.CONNECTED, room.name)
-      sendEvent(reactApplicationContext, Constants.ON_CONNECTED, params )
+      params.putString(Constants.ROOM_NAME, room.name)
+      params.putString(Constants.ROOM_SID, room.getSid())
+      sendEvent(reactApplicationContext, Constants.ON_CONNECTED, params)
       mVideoStatusTextView!!.text = "Connected to ${room.name}"
       mReconnectingProgressBar!!.visibility = View.GONE
     }
@@ -260,8 +281,9 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       mVideoStatusTextView!!.text = "Reconnecting to ${room.name}"
       mReconnectingProgressBar!!.visibility = View.VISIBLE
       val params = Arguments.createMap()
-      params.putString(Constants.RE_CONNECTED, room.name)
-      sendEvent(reactApplicationContext, Constants.ON_RE_CONNECTED, params )
+      params.putString(Constants.ROOM_NAME, room.name)
+      params.putString(Constants.ROOM_SID, room.getSid())
+      sendEvent(reactApplicationContext, Constants.ON_RE_CONNECTED, params)
 
     }
 
@@ -269,8 +291,10 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       mVideoStatusTextView!!.text = "Failed to connect"
       audioSwitch.deactivate()
       val params = Arguments.createMap()
-      params.putString(Constants.CONNECT_FAILURE, e.toString())
-      sendEvent(reactApplicationContext, Constants.ON_CONNECT_FAILURE, params )
+      params.putString(Constants.ERROR, e.toString())
+      params.putString(Constants.ROOM_NAME, room.name)
+      params.putString(Constants.ROOM_SID, room.getSid())
+      sendEvent(reactApplicationContext, Constants.ON_CONNECT_FAILURE, params)
       initializeUI()
     }
 
@@ -278,10 +302,12 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       myLocalParticipant = null
       mVideoStatusTextView!!.text = "Disconnected from ${room.name}"
       mReconnectingProgressBar!!.visibility = View.GONE
-      myRoom = null
       val params = Arguments.createMap()
-      params.putString(Constants.DISCONNECTED, room.name)
-      sendEvent(reactApplicationContext, Constants.ON_DISCONNECTED, params )
+      params.putString(Constants.ROOM_NAME, room.name)
+      params.putString(Constants.ROOM_SID, room.getSid())
+      sendEvent(reactApplicationContext, Constants.ON_DISCONNECTED, params)
+
+      myRoom = null
       // Only reinitialize the UI if disconnect was not called from onDestroy()
       if (!disconnectedFromOnDestroy) {
         audioSwitch.deactivate()
@@ -297,11 +323,33 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
 
     override fun onParticipantReconnected(room: Room, participant: RemoteParticipant) {
       Log.d(TAG, "got this al leat then")
+      val params = Arguments.createMap()
+      params.putString(Constants.ROOM_NAME, room.name)
+      params.putString(Constants.ROOM_SID, room.getSid())
+      params.putString(Constants.PARTICIPANT_SID, participant.sid)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_RECONNECTED, params)
+
       addRemoteParticipant(participant)
     }
 
     override fun onParticipantDisconnected(room: Room, participant: RemoteParticipant) {
       removeRemoteParticipant(participant)
+    }
+
+    override fun onDominantSpeakerChanged(room: Room, remoteParticipant: RemoteParticipant?) {
+      val event: WritableMap = WritableNativeMap()
+
+      event.putString("roomName", room.name)
+      event.putString("roomSid", room.sid)
+
+      if (remoteParticipant == null) {
+        event.putString("participant", "")
+      } else {
+        event.putMap("participant", buildParticipant(remoteParticipant))
+      }
+
+      sendEvent(reactApplicationContext, Constants.ON_DOMINANT_SPEAKER_CHANGED, event)
+
     }
 
     override fun onRecordingStarted(room: Room) {
@@ -321,6 +369,120 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     }
   }
 
+  private fun localListener(): LocalParticipant.Listener {
+    return object : LocalParticipant.Listener {
+      override fun onAudioTrackPublished(
+        localParticipant: LocalParticipant,
+        localAudioTrackPublication: LocalAudioTrackPublication
+      ) {
+      }
+
+      override fun onAudioTrackPublicationFailed(
+        localParticipant: LocalParticipant,
+        localAudioTrack: LocalAudioTrack,
+        twilioException: TwilioException
+      ) {
+      }
+
+      override fun onVideoTrackPublished(
+        localParticipant: LocalParticipant,
+        localVideoTrackPublication: LocalVideoTrackPublication
+      ) {
+      }
+
+      override fun onVideoTrackPublicationFailed(
+        localParticipant: LocalParticipant,
+        localVideoTrack: LocalVideoTrack,
+        twilioException: TwilioException
+      ) {
+      }
+
+      override fun onDataTrackPublished(
+        localParticipant: LocalParticipant,
+        localDataTrackPublication: LocalDataTrackPublication
+      ) {
+      }
+
+      override fun onDataTrackPublicationFailed(
+        localParticipant: LocalParticipant,
+        localDataTrack: LocalDataTrack,
+        twilioException: TwilioException
+      ) {
+      }
+
+      override fun onNetworkQualityLevelChanged(
+        localParticipant: LocalParticipant,
+        networkQualityLevel: NetworkQualityLevel
+      ) {
+        val event: WritableMap = WritableNativeMap()
+        event.putMap(Constants.PARTICIPANT, buildParticipant(localParticipant))
+        event.putBoolean(Constants.IS_LOCAL_USER, true)
+        // Twilio SDK defines Enum 0 as UNKNOWN and 1 as Quality ZERO, so we subtract one to get the correct quality level as an integer
+        event.putInt(Constants.QUALITY, networkQualityLevel.ordinal - 1)
+        sendEvent(mReactApplicationContext!!, Constants.ON_NETWORK_QUALITY_LEVELS_CHANGED, event)
+      }
+    }
+  }
+
+  private fun buildParticipant(participant: Participant): WritableMap {
+    val participantMap: WritableMap = WritableNativeMap()
+    participantMap.putString(Constants.IDENTITY, participant.identity)
+    participantMap.putString(Constants.SID, participant.sid)
+    return participantMap
+  }
+  private fun buildTrack(publication: TrackPublication): WritableMap? {
+    val trackMap: WritableMap = WritableNativeMap()
+    trackMap.putString(Constants.TRACK_SID, publication.trackSid)
+    trackMap.putString(Constants.TRACK_NAME, publication.trackName)
+    trackMap.putBoolean(Constants.ENABLED, publication.isTrackEnabled)
+    return trackMap
+  }
+
+  private fun buildRemoveParticipantVideo(
+    participant: Participant,
+    deleteVideoTrack: RemoteVideoTrackPublication
+  ) {
+    val event = buildParticipantVideoEvent(participant, deleteVideoTrack)
+    sendEvent(mReactApplicationContext!!, Constants.ON_PARTICIPANT_REMOVED_VIDEO_TRACK, event)
+  }
+  private fun addParticipant(room: Room, remoteParticipant: RemoteParticipant) {
+    val event: WritableMap = WritableNativeMap()
+    event.putString("roomName", room.name)
+    event.putString("roomSid", room.sid)
+    event.putMap("participant", buildParticipant(remoteParticipant))
+    sendEvent(mReactApplicationContext!!, Constants.ON_PARTICIPANT_CONNECTED, event)
+  }
+  private fun buildParticipantDataEvent(
+    participant: Participant,
+    publication: TrackPublication
+  ): WritableMap {
+    val participantMap: WritableMap = buildParticipant(participant)!!
+    val trackMap: WritableMap = buildTrack(publication)!!
+    val event: WritableMap = WritableNativeMap()
+    event.putMap(Constants.PARTICIPANT, participantMap)
+    event.putMap(Constants.TRACK, trackMap)
+    return event
+  }
+
+  private fun buildParticipantVideoEvent(
+    participant: Participant,
+    publication: TrackPublication
+  ): WritableMap? {
+    val participantMap = buildParticipant(participant)
+    val trackMap: WritableMap = buildTrack(publication)!!
+    val event: WritableMap = WritableNativeMap()
+    event.putMap("participant", participantMap)
+    event.putMap("track", trackMap)
+    return event
+  }
+
+  private fun addParticipantVideoEvent(
+    participant: Participant,
+    publication: RemoteVideoTrackPublication
+  ) {
+    val event: WritableMap = buildParticipantVideoEvent(participant, publication)!!
+    sendEvent(mReactApplicationContext!!, Constants.ON_PARTICIPANT_ADDED_VIDEO_TRACK, event)
+  }
   /*
    * RemoteParticipant events listener
    */
@@ -435,6 +597,9 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       remoteAudioTrackPublication: RemoteAudioTrackPublication,
       remoteAudioTrack: RemoteAudioTrack
     ) {
+      val event = buildParticipantVideoEvent(remoteParticipant, remoteAudioTrackPublication)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_REMOVED_AUDIO_TRACK, event)
+
       Log.i(
         TAG, "onAudioTrackUnsubscribed: " +
           "[RemoteParticipant: identity=${remoteParticipant.identity}], " +
@@ -466,6 +631,10 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       remoteDataTrackPublication: RemoteDataTrackPublication,
       remoteDataTrack: RemoteDataTrack
     ) {
+      val event: WritableMap =
+        buildParticipantDataEvent(remoteParticipant, remoteDataTrackPublication)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_ADDED_DATA_TRACK, event)
+
       Log.i(
         TAG, "onDataTrackSubscribed: " +
           "[RemoteParticipant: identity=${remoteParticipant.identity}], " +
@@ -474,12 +643,15 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       )
       mVideoStatusTextView!!.text = "onDataTrackSubscribed"
     }
-
     override fun onDataTrackUnsubscribed(
       remoteParticipant: RemoteParticipant,
       remoteDataTrackPublication: RemoteDataTrackPublication,
       remoteDataTrack: RemoteDataTrack
     ) {
+      val event: WritableMap =
+        buildParticipantDataEvent(remoteParticipant, remoteDataTrackPublication)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_REMOVED_DATA_TRACK, event)
+
       Log.i(
         TAG, "onDataTrackUnsubscribed: " +
           "[RemoteParticipant: identity=${remoteParticipant.identity}], " +
@@ -517,6 +689,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "name=${remoteVideoTrack.name}]"
       )
       mVideoStatusTextView!!.text = "onVideoTrackSubscribed"
+      addParticipantVideoEvent(remoteParticipant, remoteVideoTrackPublication)
       addRemoteParticipantVideo(remoteVideoTrack)
     }
 
@@ -532,6 +705,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "name=${remoteVideoTrack.name}]"
       )
       mVideoStatusTextView!!.text = "onVideoTrackUnsubscribed"
+      buildRemoveParticipantVideo(remoteParticipant, remoteVideoTrackPublication)
       removeParticipantVideo(remoteVideoTrack)
     }
 
@@ -561,24 +735,36 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       remoteParticipant: RemoteParticipant,
       remoteAudioTrackPublication: RemoteAudioTrackPublication
     ) {
+      val event = buildParticipantVideoEvent(remoteParticipant, remoteAudioTrackPublication)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_ENABLED_AUDIO_TRACK, event)
+
     }
 
     override fun onVideoTrackEnabled(
       remoteParticipant: RemoteParticipant,
       remoteVideoTrackPublication: RemoteVideoTrackPublication
     ) {
+      val event = buildParticipantVideoEvent(remoteParticipant, remoteVideoTrackPublication)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_ENABLED_VIDEO_TRACK, event)
+
     }
 
     override fun onVideoTrackDisabled(
       remoteParticipant: RemoteParticipant,
       remoteVideoTrackPublication: RemoteVideoTrackPublication
     ) {
+      val event = buildParticipantVideoEvent(remoteParticipant, remoteVideoTrackPublication)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_DISABLED_VIDEO_TRACK, event)
+
     }
 
     override fun onAudioTrackDisabled(
       remoteParticipant: RemoteParticipant,
       remoteAudioTrackPublication: RemoteAudioTrackPublication
     ) {
+      val event = buildParticipantVideoEvent(remoteParticipant, remoteAudioTrackPublication)
+      sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_DISABLED_AUDIO_TRACK, event)
+
     }
   }
 
@@ -652,13 +838,16 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     )
   }
 
-  public fun setAccessToken(token: String) {
-
-    this.accessToken = token
+  public fun setAccessTokenFromPref() {
+    val sharedPref = mReactApplicationContext!!
+      .getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
+    val prefToken = sharedPref.getString(Constants.PREF_TOEKN, null)
+    this.accessToken= prefToken.toString();
 
   }
 
   fun connectToRoom(src: ReadableMap) {
+    setAccessTokenFromPref()
     if( this.accessToken==null|| this.accessToken.isEmpty()){
       this.accessToken = src.getString("token")!!
     }
@@ -667,7 +856,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     try {
       audioSwitch.activate()
       Log.d(TAG, "On connectToRoom =========================\n" +
-        " toke:${src.getString("token")!!}\n" +
         " roomName:${src.getString("roomName")!!}\n")
 
       myRoom = connect(this.context, accessToken, roomListener) {
@@ -712,14 +900,9 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
    */
   fun initializeUI() {
 
-    mConnectActionFab!!.setImageDrawable(
-      ContextCompat.getDrawable(
-        this.context,
-        R.drawable.ic_video_call_white_24dp
-      )
-    )
-    mConnectActionFab!!.show()
-    mConnectActionFab!!.setOnClickListener(connectActionClickListener())
+
+    mConnectActionFab!!.hide()
+   // mConnectActionFab!!.setOnClickListener(connectActionClickListener())
     mSwitchCameraActionFab!!.show()
     mSwitchCameraActionFab!!.setOnClickListener(switchCameraClickListener())
     mLocalVideoActionFab!!.show()
@@ -911,7 +1094,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       /*
        * Connect to room
        */
-      setAccessToken(tokenEditText.text.toString())
+     // setAccessToken(tokenEditText.text.toString())
       //connectToRoom(roomEditText.text.toString())
     }
   }
@@ -968,10 +1151,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
         mLocalVideoActionFab!!.setImageDrawable(
           ContextCompat.getDrawable(this.context, icon)
         )
-
-        val event = Arguments.createMap()
-        event.putString( Constants.CONNECTED, "test")
-        mReactApplicationContext?.let { it1 -> sendEvent(it1, Constants.ON_CONNECTED, event) }
       }
     }
   }
@@ -987,9 +1166,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       localAudioTrack?.let {
         val enable = !it.isEnabled
         it.enable(enable)
-        val event = Arguments.createMap()
-        event.putString( Constants.CONNECTED, "test")
-        mReactApplicationContext?.let { it1 -> sendEvent(it1, Constants.ON_CONNECTED, event) }
         val icon = if (enable)
           R.drawable.ic_mic_white_24dp
         else

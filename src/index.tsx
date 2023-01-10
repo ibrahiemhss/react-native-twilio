@@ -23,20 +23,32 @@ const twilioEmitter = new NativeEventEmitter(NativeModules.TwilioModule);
 export { RNTwilio, twilioEmitter };
 
 export enum EventType {
-  CONNECTED = 'connected',
-  CONNECT_FAILURE = 'connectedFailure',
-  DISCONNECTED = 'disconnected',
-  RE_CONNECTED = 'reconnected',
-
   ON_FRAME_DIMENSIONS_CHANGED = 'onFrameDimensionsChanged',
   ON_CAMERA_SWITCHED = 'onCameraSwitched',
   ON_VIDEO_CHANGED = 'onVideoChanged',
   ON_AUDIO_CHANGED = 'onAudioChanged',
+  ROOM_NAME = 'roomName',
+  ROOM_SID = 'roomSid',
+  PARTICIPANT_NAME = 'participantName',
+  PARTICIPANT_SID = 'participantSid',
+  PARTICIPANT = 'participant',
+  PARTICIPANTS = 'participants',
+  LOCAL_PARTICIPANT = 'localParticipant',
+  TRACK = 'track',
+  TRACK_SID = 'trackSid',
+  TRACK_NAME = 'trackName',
+  ENABLED = 'enabled',
+  IDENTITY = 'identity',
+  SID = 'sid',
+  IS_LOCAL_USER = 'isLocalUser',
+  QUALITY = 'quality',
+  ERROR = 'error',
   ON_CONNECTED = 'onRoomDidConnect',
   ON_RE_CONNECTED = 'onRoomReConnect',
   ON_CONNECT_FAILURE = 'onRoomDidFailToConnect',
   ON_DISCONNECTED = 'onRoomDidDisconnect',
   ON_PARTICIPANT_CONNECTED = 'onRoomParticipantDidConnect',
+  ON_PARTICIPANT_RECONNECTED = 'onRoomParticipantReconnect',
   ON_PARTICIPANT_DISCONNECTED = 'onRoomParticipantDidDisconnect',
   ON_DATATRACK_MESSAGE_RECEIVED = 'onDataTrackMessageReceived',
   ON_PARTICIPANT_ADDED_DATA_TRACK = 'onParticipantAddedDataTrack',
@@ -86,18 +98,13 @@ class TwilioView extends Component<TwilioProps> {
     TwilioView.removeTwilioListeners();
 
     const subscriptions = [
-      twilioEmitter.addListener(EventType.ON_CONNECT_FAILURE, ({ error }) => {
-        console.log(`JS CallConnectFailure = ${error}`);
-      }),
-      twilioEmitter.addListener(EventType.ON_RE_CONNECTED, ({ name }) => {
-        console.log(`JS Reconnecting = ${name}`);
-      }),
-      twilioEmitter.addListener(EventType.ON_CONNECTED, ({ name }) => {
-        console.log(`JS Connected = ${name}`);
-      }),
-      twilioEmitter.addListener(EventType.ON_DISCONNECTED, ({ name }) => {
-        console.log(`JS disconnected = ${name}`);
-      }),
+      twilioEmitter.addListener(
+        EventType.ON_CONNECT_FAILURE,
+        ({ error }) => {}
+      ),
+      twilioEmitter.addListener(EventType.ON_RE_CONNECTED, ({ name }) => {}),
+      twilioEmitter.addListener(EventType.ON_CONNECTED, ({ name }) => {}),
+      twilioEmitter.addListener(EventType.ON_DISCONNECTED, ({ name }) => {}),
     ];
     return () => {
       subscriptions.map((subscription) => {
@@ -111,9 +118,7 @@ class TwilioView extends Component<TwilioProps> {
     twilioEmitter.removeAllListeners(EventType.ON_DISCONNECTED);
     twilioEmitter.removeAllListeners(EventType.ON_CONNECT_FAILURE);
     twilioEmitter.removeAllListeners(EventType.ON_RE_CONNECTED);
-    //twilioEmitter.removeAllListeners(EventType.Reconnecting);
   }
-  //private static close() {}
 
   render() {
     return <RNTwilio {...this.props} />;
