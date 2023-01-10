@@ -1,9 +1,59 @@
+/*
+export const TwilioView =
+  UIManager.getViewManagerConfig(ComponentName) != null
+    ? requireNativeComponent<TwilioProps>(ComponentName)
+    : () => {
+      throw new Error(LINKING_ERROR);
+    };
+*/
+
 import {
+  NativeEventEmitter,
+  NativeModules,
+  Platform,
   requireNativeComponent,
   UIManager,
-  Platform,
   ViewStyle,
 } from 'react-native';
+
+import { Component } from 'react';
+
+const twilioEmitter = new NativeEventEmitter(NativeModules.TwilioModule);
+
+export { RNTwilio, twilioEmitter };
+
+export enum EventType {
+  CONNECTED = 'connected',
+  CONNECT_FAILURE = 'connectedFailure',
+  DISCONNECTED = 'disconnected',
+  RE_CONNECTED = 'reconnected',
+
+  ON_FRAME_DIMENSIONS_CHANGED = 'onFrameDimensionsChanged',
+  ON_CAMERA_SWITCHED = 'onCameraSwitched',
+  ON_VIDEO_CHANGED = 'onVideoChanged',
+  ON_AUDIO_CHANGED = 'onAudioChanged',
+  ON_CONNECTED = 'onRoomDidConnect',
+  ON_RE_CONNECTED = 'onRoomReConnect',
+  ON_CONNECT_FAILURE = 'onRoomDidFailToConnect',
+  ON_DISCONNECTED = 'onRoomDidDisconnect',
+  ON_PARTICIPANT_CONNECTED = 'onRoomParticipantDidConnect',
+  ON_PARTICIPANT_DISCONNECTED = 'onRoomParticipantDidDisconnect',
+  ON_DATATRACK_MESSAGE_RECEIVED = 'onDataTrackMessageReceived',
+  ON_PARTICIPANT_ADDED_DATA_TRACK = 'onParticipantAddedDataTrack',
+  ON_PARTICIPANT_REMOVED_DATA_TRACK = 'onParticipantRemovedDataTrack',
+  ON_PARTICIPANT_ADDED_VIDEO_TRACK = 'onParticipantAddedVideoTrack',
+  ON_PARTICIPANT_REMOVED_VIDEO_TRACK = 'onParticipantRemovedVideoTrack',
+  ON_PARTICIPANT_ADDED_AUDIO_TRACK = 'onParticipantAddedAudioTrack',
+  ON_PARTICIPANT_REMOVED_AUDIO_TRACK = 'onParticipantRemovedAudioTrack',
+  ON_PARTICIPANT_ENABLED_VIDEO_TRACK = 'onParticipantEnabledVideoTrack',
+  ON_PARTICIPANT_DISABLED_VIDEO_TRACK = 'onParticipantDisabledVideoTrack',
+  ON_PARTICIPANT_ENABLED_AUDIO_TRACK = 'onParticipantEnabledAudioTrack',
+  ON_PARTICIPANT_DISABLED_AUDIO_TRACK = 'onParticipantDisabledAudioTrack',
+  ON_STATS_RECEIVED = 'onStatsReceived',
+  ON_NETWORK_QUALITY_LEVELS_CHANGED = 'onNetworkQualityLevelsChanged',
+  ON_DOMINANT_SPEAKER_CHANGED = 'onDominantSpeakerDidChange',
+  ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS = 'onLocalParticipantSupportedCodecs',
+}
 
 const LINKING_ERROR =
   `The package 'react-native-twillio' doesn't seem to be linked. Make sure: \n\n` +
@@ -12,15 +62,61 @@ const LINKING_ERROR =
   '- You are not using Expo Go\n';
 
 type TwilioProps = {
-  color: string;
+  src: {};
   style: ViewStyle;
 };
 
 const ComponentName = 'TwilioView';
 
-export const TwilioView =
+const RNTwilio =
   UIManager.getViewManagerConfig(ComponentName) != null
     ? requireNativeComponent<TwilioProps>(ComponentName)
     : () => {
-      throw new Error(LINKING_ERROR);
+        throw new Error(LINKING_ERROR);
+      };
+class TwilioView extends Component<TwilioProps> {
+  static initialize(token: string) {
+    NativeModules.TwilioView.initialize(token);
+    const subscribeRegisterAndroid = TwilioView.listenTwilio();
+    return () => {
+      subscribeRegisterAndroid();
     };
+  }
+  private static listenTwilio() {
+    TwilioView.removeTwilioListeners();
+
+    const subscriptions = [
+      twilioEmitter.addListener(EventType.ON_CONNECT_FAILURE, ({ error }) => {
+        console.log(`JS CallConnectFailure = ${error}`);
+      }),
+      twilioEmitter.addListener(EventType.ON_RE_CONNECTED, ({ name }) => {
+        console.log(`JS Reconnecting = ${name}`);
+      }),
+      twilioEmitter.addListener(EventType.ON_CONNECTED, ({ name }) => {
+        console.log(`JS Connected = ${name}`);
+      }),
+      twilioEmitter.addListener(EventType.ON_DISCONNECTED, ({ name }) => {
+        console.log(`JS disconnected = ${name}`);
+      }),
+    ];
+    return () => {
+      subscriptions.map((subscription) => {
+        subscription.remove();
+      });
+    };
+  }
+
+  private static removeTwilioListeners() {
+    twilioEmitter.removeAllListeners(EventType.ON_CONNECTED);
+    twilioEmitter.removeAllListeners(EventType.ON_DISCONNECTED);
+    twilioEmitter.removeAllListeners(EventType.ON_CONNECT_FAILURE);
+    twilioEmitter.removeAllListeners(EventType.ON_RE_CONNECTED);
+    //twilioEmitter.removeAllListeners(EventType.Reconnecting);
+  }
+  //private static close() {}
+
+  render() {
+    return <RNTwilio {...this.props} />;
+  }
+}
+export default TwilioView;
