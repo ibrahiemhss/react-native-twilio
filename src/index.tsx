@@ -43,6 +43,7 @@ export enum EventType {
   IS_LOCAL_USER = 'isLocalUser',
   QUALITY = 'quality',
   ERROR = 'error',
+  END_CALL = 'endCall',
   ON_CONNECTED = 'onRoomDidConnect',
   ON_RE_CONNECTED = 'onRoomReConnect',
   ON_CONNECT_FAILURE = 'onRoomDidFailToConnect',

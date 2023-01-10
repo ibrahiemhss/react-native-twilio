@@ -12,13 +12,13 @@
     android:id="@+id/thumbnailVideoView"
     app:tviOverlaySurface="true"
     app:tviMirror="true"
-    android:visibility="gone"
     android:layout_width="120dp"
     android:layout_height="120dp"
-    android:layout_marginTop="48dp"
-    android:layout_marginStart="48dp"
-    android:layout_gravity="center|start"
-    android:layout_marginBottom="96dp"
+    android:elevation="1dp"
+    android:layout_marginBottom="48dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginStart="24dp"
+    android:layout_gravity="bottom"
     />
     <com.twilio.video.VideoView
         android:id="@+id/primaryVideoView"

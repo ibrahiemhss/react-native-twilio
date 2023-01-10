@@ -23,6 +23,7 @@ class Constants {
     var SID = "sid"
     var IS_LOCAL_USER = "isLocalUser"
     var QUALITY = "quality"
+    var END_CALL = "endCall"
     var ERROR = "error"
     var ON_CONNECTED = "onRoomDidConnect"
     var ON_RE_CONNECTED = "onRoomReConnect"

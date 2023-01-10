@@ -71,7 +71,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
   var mainView: View? = null
 
   private var mReconnectingProgressBar: ProgressBar? = null
-  private var mVideoStatusTextView: TextView? = null
   private var mConnectActionFab: FloatingActionButton? = null
   private var mSwitchCameraActionFab: FloatingActionButton? = null
   private var mLocalVideoActionFab: FloatingActionButton? = null
@@ -101,7 +100,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     setAccessTokenFromPref()
     mReconnectingProgressBar =
       mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
-    mVideoStatusTextView = mainView!!.findViewById<View>(R.id.videoStatusTextView) as TextView?
     mConnectActionFab =
       mainView!!.findViewById<View>(R.id.connectActionFab) as FloatingActionButton?
     mSwitchCameraActionFab =
@@ -132,7 +130,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
 
     mReconnectingProgressBar =
       mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
-    mVideoStatusTextView = mainView!!.findViewById<View>(R.id.videoStatusTextView) as TextView?
     mConnectActionFab =
       mainView!!.findViewById<View>(R.id.connectActionFab) as FloatingActionButton?
     mSwitchCameraActionFab =
@@ -161,7 +158,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       mReconnectingProgressBar!!.visibility = if (it.state != Room.State.RECONNECTING)
         View.GONE else
         View.VISIBLE
-      mVideoStatusTextView!!.text = "Connected to ${it.name}"
     }
     initializeUI()
   }
@@ -235,7 +231,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     override fun onConnected(room: Room) {
 
       myLocalParticipant = room.localParticipant
-      mVideoStatusTextView!!.text = "Connected to ${room.name}"
       myActivity!!.title = room.name
 
 
@@ -268,17 +263,14 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
 
     override fun onReconnected(room: Room) {
 
-      mVideoStatusTextView!!.text = "Connected to ${room.name}"
       val params = Arguments.createMap()
       params.putString(Constants.ROOM_NAME, room.name)
       params.putString(Constants.ROOM_SID, room.getSid())
       sendEvent(reactApplicationContext, Constants.ON_CONNECTED, params)
-      mVideoStatusTextView!!.text = "Connected to ${room.name}"
       mReconnectingProgressBar!!.visibility = View.GONE
     }
 
     override fun onReconnecting(room: Room, twilioException: TwilioException) {
-      mVideoStatusTextView!!.text = "Reconnecting to ${room.name}"
       mReconnectingProgressBar!!.visibility = View.VISIBLE
       val params = Arguments.createMap()
       params.putString(Constants.ROOM_NAME, room.name)
@@ -288,7 +280,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     }
 
     override fun onConnectFailure(room: Room, e: TwilioException) {
-      mVideoStatusTextView!!.text = "Failed to connect"
       audioSwitch.deactivate()
       val params = Arguments.createMap()
       params.putString(Constants.ERROR, e.toString())
@@ -300,7 +291,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
 
     override fun onDisconnected(room: Room, e: TwilioException?) {
       myLocalParticipant = null
-      mVideoStatusTextView!!.text = "Disconnected from ${room.name}"
       mReconnectingProgressBar!!.visibility = View.GONE
       val params = Arguments.createMap()
       params.putString(Constants.ROOM_NAME, room.name)
@@ -499,7 +489,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "subscribed=${remoteAudioTrackPublication.isTrackSubscribed}, " +
           "name=${remoteAudioTrackPublication.trackName}]"
       )
-      mVideoStatusTextView!!.text = "onAudioTrackAdded"
     }
 
     override fun onAudioTrackUnpublished(
@@ -514,7 +503,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "subscribed=${remoteAudioTrackPublication.isTrackSubscribed}, " +
           "name=${remoteAudioTrackPublication.trackName}]"
       )
-      mVideoStatusTextView!!.text = "onAudioTrackRemoved"
     }
 
     override fun onDataTrackPublished(
@@ -529,7 +517,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "subscribed=${remoteDataTrackPublication.isTrackSubscribed}, " +
           "name=${remoteDataTrackPublication.trackName}]"
       )
-      mVideoStatusTextView!!.text = "onDataTrackPublished"
     }
 
     override fun onDataTrackUnpublished(
@@ -544,7 +531,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "subscribed=${remoteDataTrackPublication.isTrackSubscribed}, " +
           "name=${remoteDataTrackPublication.trackName}]"
       )
-      mVideoStatusTextView!!.text = "onDataTrackUnpublished"
     }
 
     override fun onVideoTrackPublished(
@@ -559,7 +545,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "subscribed=${remoteVideoTrackPublication.isTrackSubscribed}, " +
           "name=${remoteVideoTrackPublication.trackName}]"
       )
-      mVideoStatusTextView!!.text = "onVideoTrackPublished"
     }
 
     override fun onVideoTrackUnpublished(
@@ -574,7 +559,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "subscribed=${remoteVideoTrackPublication.isTrackSubscribed}, " +
           "name=${remoteVideoTrackPublication.trackName}]"
       )
-      mVideoStatusTextView!!.text = "onVideoTrackUnpublished"
     }
 
     override fun onAudioTrackSubscribed(
@@ -589,7 +573,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "playbackEnabled=${remoteAudioTrack.isPlaybackEnabled}, " +
           "name=${remoteAudioTrack.name}]"
       )
-      mVideoStatusTextView!!.text = "onAudioTrackSubscribed"
     }
 
     override fun onAudioTrackUnsubscribed(
@@ -607,7 +590,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "playbackEnabled=${remoteAudioTrack.isPlaybackEnabled}, " +
           "name=${remoteAudioTrack.name}]"
       )
-      mVideoStatusTextView!!.text = "onAudioTrackUnsubscribed"
     }
 
     override fun onAudioTrackSubscriptionFailed(
@@ -623,7 +605,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "[TwilioException: code=${twilioException.code}, " +
           "message=${twilioException.message}]"
       )
-      mVideoStatusTextView!!.text = "onAudioTrackSubscriptionFailed"
     }
 
     override fun onDataTrackSubscribed(
@@ -641,7 +622,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "[RemoteDataTrack: enabled=${remoteDataTrack.isEnabled}, " +
           "name=${remoteDataTrack.name}]"
       )
-      mVideoStatusTextView!!.text = "onDataTrackSubscribed"
     }
     override fun onDataTrackUnsubscribed(
       remoteParticipant: RemoteParticipant,
@@ -658,7 +638,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "[RemoteDataTrack: enabled=${remoteDataTrack.isEnabled}, " +
           "name=${remoteDataTrack.name}]"
       )
-      mVideoStatusTextView!!.text = "onDataTrackUnsubscribed"
     }
 
     override fun onDataTrackSubscriptionFailed(
@@ -674,7 +653,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "[TwilioException: code=${twilioException.code}, " +
           "message=${twilioException.message}]"
       )
-      mVideoStatusTextView!!.text = "onDataTrackSubscriptionFailed"
     }
 
     override fun onVideoTrackSubscribed(
@@ -688,7 +666,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "[RemoteVideoTrack: enabled=${remoteVideoTrack.isEnabled}, " +
           "name=${remoteVideoTrack.name}]"
       )
-      mVideoStatusTextView!!.text = "onVideoTrackSubscribed"
       addParticipantVideoEvent(remoteParticipant, remoteVideoTrackPublication)
       addRemoteParticipantVideo(remoteVideoTrack)
     }
@@ -704,7 +681,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "[RemoteVideoTrack: enabled=${remoteVideoTrack.isEnabled}, " +
           "name=${remoteVideoTrack.name}]"
       )
-      mVideoStatusTextView!!.text = "onVideoTrackUnsubscribed"
       buildRemoveParticipantVideo(remoteParticipant, remoteVideoTrackPublication)
       removeParticipantVideo(remoteVideoTrack)
     }
@@ -722,7 +698,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
           "[TwilioException: code=${twilioException.code}, " +
           "message=${twilioException.message}]"
       )
-      mVideoStatusTextView!!.text = "onVideoTrackSubscriptionFailed"
       Snackbar.make(
         mConnectActionFab!!,
         "Failed to subscribe to ${remoteParticipant.identity}",
@@ -1000,7 +975,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       return
     }
     participantIdentity = remoteParticipant.identity
-    mVideoStatusTextView!!.text = "z Participant $participantIdentity joined"
 
     /*
      * Add participant renderer
@@ -1053,7 +1027,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
    * Called when participant leaves the room
    */
   private fun removeRemoteParticipant(remoteParticipant: RemoteParticipant) {
-    mVideoStatusTextView!!.text = "r Participant $remoteParticipant.identity left."
     if (remoteParticipant.identity != participantIdentity) {
       return
     }
@@ -1104,7 +1077,11 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       /*
        * Disconnect from room
        */
+      val event: WritableMap = WritableNativeMap()
+      event.putString(Constants.END_CALL, Constants.END_CALL)
+      sendEvent(mReactApplicationContext!!, Constants.END_CALL, event)
       myRoom?.disconnect()
+      mConnectActionFab!!.hide()
       initializeUI()
     }
   }
