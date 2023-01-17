@@ -1,13 +1,22 @@
 import * as React from 'react';
 
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import TwilioView, { EventType, twilioEmitter } from 'react-native-twilio';
 
 export default function App() {
-  const token ="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzMzNzg1NjMiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3MzM4MjE2MywiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjQiLCJ2aWRlbyI6eyJyb29tIjoibXJvb20ifX19.Y2zHAHWO3AaIzaIvnn_wct50-muHNdgqG15IWorNm48";
+  const token =
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzMzNzg1NjMiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3MzM4MjE2MywiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjQiLCJ2aWRlbyI6eyJyb29tIjoibXJvb20ifX19.Y2zHAHWO3AaIzaIvnn_wct50-muHNdgqG15IWorNm48';
   TwilioView.initialize(token);
   React.useEffect(() => {
     const subscriptions = [
+      twilioEmitter.addListener(EventType.ON_VIDEO_ENABLED, (data) => {
+        console.log('ON_VIDEO_ENABLED');
+        console.log(data);
+      }),
+      twilioEmitter.addListener(EventType.ON_MUTE, (data) => {
+        console.log('ON_MUTE');
+        console.log(data);
+      }),
       twilioEmitter.addListener(EventType.ON_CONNECTED, (data) => {
         console.log('ON_CONNECTED');
         console.log(data);
@@ -170,6 +179,20 @@ export default function App() {
         //trackSid={null}
         style={styles.box}
       />
+      <View style={styles.containerBtns}>
+        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.mute()}}>
+          <Text style={styles.text}>mute</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.flipCamera()}}>
+          <Text style={styles.text}>switch camera</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.closeCamera()}}>
+          <Text style={styles.text}>lock camera</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.endCall()}}>
+          <Text style={styles.text}>end call</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -184,5 +207,26 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     marginVertical: 20,
+  },
+  containerBtns: {
+    position: 'absolute',
+    bottom: 5,
+    justifyContent: 'space-evenly',
+    flexDirection: 'row',
+  },
+  button: {
+    justifyContent: 'center',
+    textAlign: 'center',
+    width: 70,
+    height: 'auto',
+    backgroundColor: 'green',
+    borderRadius: 10,
+    margin: 20,
+  },
+  text: {
+    color: 'white',
+    width: 50,
+    textAlign: 'center',
+    margin: 10,
   },
 });

@@ -10,13 +10,14 @@ export const TwilioView =
 import {
   NativeEventEmitter,
   NativeModules,
+  findNodeHandle,
   Platform,
   requireNativeComponent,
   UIManager,
   ViewStyle,
 } from 'react-native';
 
-import { Component } from 'react';
+import { Component, createRef } from 'react';
 
 const twilioEmitter = new NativeEventEmitter(NativeModules.TwilioModule);
 
@@ -66,6 +67,8 @@ export enum EventType {
   ON_NETWORK_QUALITY_LEVELS_CHANGED = 'onNetworkQualityLevelsChanged',
   ON_DOMINANT_SPEAKER_CHANGED = 'onDominantSpeakerDidChange',
   ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS = 'onLocalParticipantSupportedCodecs',
+  ON_VIDEO_ENABLED = 'onVideoEnabled',
+  ON_MUTE = 'onVideoEnabled',
 }
 
 const LINKING_ERROR =
@@ -77,10 +80,27 @@ const LINKING_ERROR =
 type TwilioProps = {
   src: {};
   style: ViewStyle;
+  mute: Function;
 };
 
 const ComponentName = 'TwilioView';
 
+const nativeEvents = {
+  connectToRoom: 1,
+  disconnect: 2,
+  switchCamera: 3,
+  toggleVideo: 4,
+  toggleSound: 5,
+  getStats: 6,
+  disableOpenSLES: 7,
+  toggleSoundSetup: 8,
+  toggleRemoteSound: 9,
+  releaseResource: 10,
+  toggleBluetoothHeadset: 11,
+  sendString: 12,
+  publishVideo: 13,
+  publishAudio: 14,
+};
 const RNTwilio =
   UIManager.getViewManagerConfig(ComponentName) != null
     ? requireNativeComponent<TwilioProps>(ComponentName)
@@ -88,12 +108,38 @@ const RNTwilio =
         throw new Error(LINKING_ERROR);
       };
 class TwilioView extends Component<TwilioProps> {
+  private static ref: any = createRef();
+  static runCommand(event: any, args: any) {
+    switch (Platform.OS) {
+      case 'android':
+        UIManager.dispatchViewManagerCommand(
+          findNodeHandle(this.ref.current),
+          event,
+          args
+        );
+        break;
+      default:
+        break;
+    }
+  }
   static initialize(token: string) {
     NativeModules.TwilioView.initialize(token);
     const subscribeRegisterAndroid = TwilioView.listenTwilio();
     return () => {
       subscribeRegisterAndroid();
     };
+  }
+  static flipCamera() {
+    this.runCommand('switchCamera', [1]);
+  }
+  static mute() {
+    this.runCommand('mute', [2]);
+  }
+  static closeCamera() {
+    this.runCommand('closeCamera', [3]);
+  }
+  static endCall() {
+    this.runCommand('endCall', [4]);
   }
   private static listenTwilio() {
     TwilioView.removeTwilioListeners();
@@ -122,7 +168,7 @@ class TwilioView extends Component<TwilioProps> {
   }
 
   render() {
-    return <RNTwilio {...this.props} />;
+    return <RNTwilio ref={TwilioView.ref} {...this.props} />;
   }
 }
 export default TwilioView;
