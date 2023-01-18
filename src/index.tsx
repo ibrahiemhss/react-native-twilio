@@ -68,7 +68,7 @@ export enum EventType {
   ON_DOMINANT_SPEAKER_CHANGED = 'onDominantSpeakerDidChange',
   ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS = 'onLocalParticipantSupportedCodecs',
   ON_VIDEO_ENABLED = 'onVideoEnabled',
-  ON_MUTE = 'onVideoEnabled',
+  ON_MUTE = 'onAudioEnabled',
 }
 
 const LINKING_ERROR =
@@ -130,16 +130,16 @@ class TwilioView extends Component<TwilioProps> {
     };
   }
   static flipCamera() {
-    this.runCommand('switchCamera', [1]);
+    this.runCommand('switchCamera', []);
   }
   static mute() {
-    this.runCommand('mute', [2]);
+    this.runCommand('mute', []);
   }
   static closeCamera() {
-    this.runCommand('closeCamera', [3]);
+    this.runCommand('closeCamera', []);
   }
   static endCall() {
-    this.runCommand('endCall', [4]);
+    this.runCommand('endCall', []);
   }
   private static listenTwilio() {
     TwilioView.removeTwilioListeners();

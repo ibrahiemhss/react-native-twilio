@@ -229,6 +229,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     }
 
     override fun onReconnected(room: Room) {
+      Log.d(TAG, "onReconnected")
 
       val params = Arguments.createMap()
       params.putString(Constants.ROOM_NAME, room.name)
@@ -243,6 +244,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       params.putString(Constants.ROOM_NAME, room.name)
       params.putString(Constants.ROOM_SID, room.getSid())
       sendEvent(reactApplicationContext, Constants.ON_RE_CONNECTED, params)
+      Log.d(TAG, "onReconnecting")
 
     }
 
@@ -274,6 +276,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     override fun onParticipantConnected(room: Room, participant: RemoteParticipant) {
       Log.d(TAG, "got this al leat")
       addRemoteParticipant(participant)
+      Log.d(TAG, "onParticipantConnected")
+
     }
 
     override fun onParticipantReconnected(room: Room, participant: RemoteParticipant) {
@@ -283,12 +287,15 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       params.putString(Constants.ROOM_SID, room.getSid())
       params.putString(Constants.PARTICIPANT_SID, participant.sid)
       sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_RECONNECTED, params)
+      Log.d(TAG, "onParticipantReconnected")
 
       addRemoteParticipant(participant)
     }
 
     override fun onParticipantDisconnected(room: Room, participant: RemoteParticipant) {
       removeRemoteParticipant(participant)
+      Log.d(TAG, "onParticipantDisconnected")
+
     }
 
     override fun onDominantSpeakerChanged(room: Room, remoteParticipant: RemoteParticipant?) {
@@ -330,6 +337,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
         localParticipant: LocalParticipant,
         localAudioTrackPublication: LocalAudioTrackPublication
       ) {
+        Log.d(TAG, "onAudioTrackPublished")
+
       }
 
       override fun onAudioTrackPublicationFailed(
@@ -343,6 +352,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
         localParticipant: LocalParticipant,
         localVideoTrackPublication: LocalVideoTrackPublication
       ) {
+        Log.d(TAG, "onVideoTrackPublished")
+
       }
 
       override fun onVideoTrackPublicationFailed(
@@ -356,6 +367,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
         localParticipant: LocalParticipant,
         localDataTrackPublication: LocalDataTrackPublication
       ) {
+        Log.d(TAG, "onDataTrackPublished")
+
       }
 
       override fun onDataTrackPublicationFailed(
@@ -998,7 +1011,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       val event: WritableMap = WritableNativeMap()
       event.putString(Constants.ON_VIDEO_ENABLED, enable.toString())
       sendEvent(mReactApplicationContext!!, Constants.ON_VIDEO_ENABLED, event)
-      myRoom?.disconnect()
+
     }
   }
 

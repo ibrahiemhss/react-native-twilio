@@ -48,7 +48,7 @@ class Constants {
     var ON_DOMINANT_SPEAKER_CHANGED = "onDominantSpeakerDidChange"
     var ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS = "onLocalParticipantSupportedCodecs"
     var ON_VIDEO_ENABLED = "onVideoEnabled"
-    var ON_MUTE = "onVideoEnabled"
+    var ON_MUTE = "onAudioEnabled"
 
   }
 }
