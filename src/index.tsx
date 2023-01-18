@@ -19,7 +19,10 @@ import {
 
 import { Component, createRef } from 'react';
 
-const twilioEmitter = new NativeEventEmitter(NativeModules.TwilioModule);
+const twilioEmitter =
+  Platform.OS === 'ios'
+    ? new NativeEventEmitter(NativeModules.TwilioEmitter)
+    : new NativeEventEmitter(NativeModules.TwilioModule);
 
 export { RNTwilio, twilioEmitter };
 
@@ -80,7 +83,6 @@ const LINKING_ERROR =
 type TwilioProps = {
   src: {};
   style: ViewStyle;
-  mute: Function;
 };
 
 const ComponentName = 'TwilioView';
@@ -109,37 +111,49 @@ const RNTwilio =
       };
 class TwilioView extends Component<TwilioProps> {
   private static ref: any = createRef();
-  static runCommand(event: any, args: any) {
-    switch (Platform.OS) {
-      case 'android':
-        UIManager.dispatchViewManagerCommand(
-          findNodeHandle(this.ref.current),
-          event,
-          args
-        );
-        break;
-      default:
-        break;
-    }
+  static runCommandAndroid(event: any, args: any) {
+    UIManager.dispatchViewManagerCommand(
+      findNodeHandle(this.ref.current),
+      event,
+      args
+    );
   }
   static initialize(token: string) {
-    NativeModules.TwilioView.initialize(token);
+    if (Platform.OS === 'android') {
+      NativeModules.TwilioView.initialize(token);
+    }
     const subscribeRegisterAndroid = TwilioView.listenTwilio();
     return () => {
       subscribeRegisterAndroid();
     };
   }
   static flipCamera() {
-    this.runCommand('switchCamera', []);
+    if (Platform.OS === 'ios') {
+      NativeModules.TwilioViewManager.switchCamera();
+    } else {
+      this.runCommandAndroid('switchCamera', []);
+    }
   }
   static mute() {
-    this.runCommand('mute', []);
+    if (Platform.OS === 'ios') {
+      NativeModules.TwilioViewManager.mute();
+    } else {
+      this.runCommandAndroid('mute', []);
+    }
   }
   static closeCamera() {
-    this.runCommand('closeCamera', []);
+    if (Platform.OS === 'ios') {
+      NativeModules.TwilioViewManager.closeCamera();
+    } else {
+      this.runCommandAndroid('closeCamera', []);
+    }
   }
   static endCall() {
-    this.runCommand('endCall', []);
+    if (Platform.OS === 'ios') {
+      NativeModules.TwilioViewManager.endCall();
+    } else {
+      this.runCommandAndroid('endCall', []);
+    }
   }
   private static listenTwilio() {
     TwilioView.removeTwilioListeners();

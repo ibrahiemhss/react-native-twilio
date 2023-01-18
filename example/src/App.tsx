@@ -1,12 +1,20 @@
 import * as React from 'react';
 
-import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Text,
+  Platform,
+} from 'react-native';
 import TwilioView, { EventType, twilioEmitter } from 'react-native-twilio';
 
 export default function App() {
-  const token =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzMzNzg1NjMiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3MzM4MjE2MywiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjQiLCJ2aWRlbyI6eyJyb29tIjoibXJvb20ifX19.Y2zHAHWO3AaIzaIvnn_wct50-muHNdgqG15IWorNm48';
-  TwilioView.initialize(token);
+  const token1 =
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQwODE5NzUiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDA4NTU3NSwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidWVyMSIsInZpZGVvIjp7InJvb20iOiJtcm9vbSJ9fX0.eglTk80hsNt_cOr4eh0TrJ9B_e6g3X31oDAbfkvFAsQ';
+  const token2 =
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQwODE5OTIiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDA4NTU5MiwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidWVyMiIsInZpZGVvIjp7InJvb20iOiJtcm9vbSJ9fX0.VfRDGqYHQGc4G27cYruwBJg9zKBNV5Z66Wx_A8f7wJY';
+  TwilioView.initialize(token1);
   React.useEffect(() => {
     const subscriptions = [
       twilioEmitter.addListener(EventType.ON_VIDEO_ENABLED, (data) => {
@@ -175,21 +183,44 @@ export default function App() {
   return (
     <View style={styles.container}>
       <TwilioView
-        src={{ roomName: 'mroom' }}
+        src={{
+          token: Platform.OS === 'ios' ? token2 : token1,
+          roomName: 'mroom',
+        }}
         //trackSid={null}
         style={styles.box}
       />
       <View style={styles.containerBtns}>
-        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.mute()}}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            TwilioView.mute();
+          }}
+        >
           <Text style={styles.text}>mute</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.flipCamera()}}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            TwilioView.flipCamera();
+          }}
+        >
           <Text style={styles.text}>switch camera</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.closeCamera()}}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            TwilioView.closeCamera();
+          }}
+        >
           <Text style={styles.text}>lock camera</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={()=>{TwilioView.endCall()}}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            TwilioView.endCall();
+          }}
+        >
           <Text style={styles.text}>end call</Text>
         </TouchableOpacity>
       </View>

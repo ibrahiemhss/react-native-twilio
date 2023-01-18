@@ -1,36 +1,117 @@
+import UIKit
+import Foundation
+import React
+import AVFoundation
+import TwilioVideo
+import AVFoundation
+
 @objc(TwilioViewManager)
 class TwilioViewManager: RCTViewManager {
 
-  override func view() -> (TwilioView) {
-    return TwilioView()
-  }
+    override func view() -> (TwilioView) {
+        return TwilioView()
+    }
+    
+    @objc override static func requiresMainQueueSetup() -> Bool {
+        return true
+    }
+    
+    func methodQueue() -> DispatchQueue {
+        return bridge.uiManager.methodQueue
+    }
+    
+    @objc
+       func switchCamera() {
+           view().switchCamera()
+       }
+    
+    @objc
+       func mute() {
+           view().mute()
 
-  @objc override static func requiresMainQueueSetup() -> Bool {
-    return false
-  }
+       }
+    
+    @objc
+       func closeCamera() {
+           view().closeCamera()
+
+       }
+    
+    @objc
+       func endCall() {
+           view().endCall()
+
+       }
+    
 }
 
 class TwilioView : UIView {
+    let rootController = TwilioViewController();
+    var _src = NSDictionary()
+    var rect = CGRectMake(0, 0, 100, 100)
+    var previewView:VideoView = VideoView.init()
 
-  @objc var color: String = "" {
-    didSet {
-      self.backgroundColor = hexStringToUIColor(hexColor: color)
+    override public init(frame: CGRect) {
+        super.init(frame: frame)
+        addSubview(rootController.view);
     }
-  }
-
-  func hexStringToUIColor(hexColor: String) -> UIColor {
-    let stringScanner = Scanner(string: hexColor)
-
-    if(hexColor.hasPrefix("#")) {
-      stringScanner.scanLocation = 1
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
-    var color: UInt32 = 0
-    stringScanner.scanHexInt32(&color)
+    
+    
+    
+    @objc var initialize: NSDictionary = [:]  {
+        didSet {
+            _src=src
+        }
+    }
+    
+    
+    @objc var src: NSDictionary = [:]  {
+        didSet {
+            _src=src
+        }
+    }
 
-    let r = CGFloat(Int(color >> 16) & 0x000000FF)
-    let g = CGFloat(Int(color >> 8) & 0x000000FF)
-    let b = CGFloat(Int(color) & 0x000000FF)
+    public func switchCamera() {
+        rootController.switchCamera()
+    
+     }
+  
 
-    return UIColor(red: r / 255.0, green: g / 255.0, blue: b / 255.0, alpha: 1)
-  }
+    func mute() {
+        rootController.mute()
+     }
+  
+  
+    func closeCamera() {
+        rootController.closeCamera()
+
+     }
+
+    func endCall() {
+        rootController.endCall()
+
+     }
+    
+    
+    func videoView(_ videoView: VideoView, didChangeVideoSize size: CGSize) {
+        if (self.previewView == videoView) {
+            //self.videoSize = size
+        }
+        self.setNeedsLayout()
+    }
+    
+    override func layoutSubviews() {
+    
+
+        rect = CGRect(x: 0, y:0, width: frame.width, height: frame.height)
+        rootController.setDataSrc(data: _src,rect: rect,videoView: previewView)
+    
+    }
+    
 }
+
+
