@@ -1,198 +1,219 @@
-//
-//  TwilioViewController.swift
-//  react-native-twilio
-//
-//  Created by ibrahim on 18/01/2023.
-//
 
 import Foundation
-import UIKit
 import TwilioVideo
 import AVFoundation
 
-class TwilioViewController: UIViewController, UITextFieldDelegate, VideoViewDelegate {
+class TwilioViewController: UIViewController {
     
     
     
-    // Configure access token manually for testing, if desired! Create one manually in the console
-
-    var accessToken : String?
-
     // Video SDK components
-    var room: Room?
-    var roomName: String?
-    var camera: CameraSource?
-    var localVideoTrack: LocalVideoTrack?
-    var localAudioTrack: LocalAudioTrack?
-    var remoteParticipant: RemoteParticipant?
+    public static var room: Room?
+    public static var roomName: String?
+    public static var camera: CameraSource?
+    public static var localVideoTrack: LocalVideoTrack?
+    public static var localAudioTrack: LocalAudioTrack?
+    public static var remoteParticipant: RemoteParticipant?
+    //
     var remoteView: VideoView?
+    var placeHolderContainer: UIView?
     
-    // MARK:- UI Element Outlets and handles
-    
-    // `VideoView` created from a storyboard
-    // @IBOutlet weak var previewView: VideoView!
+    public static var textLabel = UILabel(frame: CGRect.zero)
     var previewView:VideoView = VideoView.init()
+    static var viewRect = CGRectMake(0, 0, 48, 48)
+    public static var accessToken : String?
+    public static var isStopedCamera: Bool = false
+    public static var imgUriPlaceHolder : String?
+    public static var textPlaceHolder : String?
+    public static var isCameraClosed : Bool?
     
-    //var previewView:  VideoRenderer!
-    var viewRect = CGRectMake(0, 0, 48, 48)
-    
-    //@IBOutlet weak var connectButton: UIButton!
-    //@IBOutlet weak var disconnectButton: UIButton!
-   // @IBOutlet weak var messageLabel: UILabel!
-    //@IBOutlet weak var roomTextField: UITextField!
-   // @IBOutlet weak var roomLine: UIView!
-    //@IBOutlet weak var roomLabel: UILabel!
-    //@IBOutlet weak var micButton: UIButton!
-    
-    // React narive set data src ==============================================================
-    // ========================================================================================
-    func setDataSrc( data :NSDictionary,rect :CGRect, videoView : VideoView){
-        viewRect=rect
-        //view.frame=rect
+    // ------------------------------------------------------------------------------------------------------
+    func setDataSrc( data :NSDictionary,rect :CGRect){
+        TwilioViewController.viewRect=rect
         self.previewView.frame = rect
         self.previewView.contentMode = .scaleAspectFill;
-        var dic:NSDictionary = NSDictionary(dictionary:data)
+        self.view.addSubview(self.previewView)
+        let dic = NSDictionary(dictionary:data)
+        self.startPreview()
         guard let _token = dic.object(forKey: "token") as? String else {
             return
         }
         guard let _roomName = dic.object(forKey: "roomName") as? String else {
             return
         }
-        accessToken = _token
-        roomName = _roomName
+        
+        guard let _imgUriPlaceHolder = dic.object(forKey: "imgUriPlaceHolder") as? String else {
+            return
+        }
+        guard let _textPlaceHolder = dic.object(forKey: "textPlaceHolder") as? String else {
+            return
+        }
+        TwilioViewController.accessToken = _token
+        TwilioViewController.roomName = _roomName
+        TwilioViewController.imgUriPlaceHolder = _imgUriPlaceHolder
+        TwilioViewController.textPlaceHolder = _textPlaceHolder
+        print (" ==== imgUriPlaceHolder = \(String(describing: TwilioViewController.imgUriPlaceHolder))")
+        print (" ==== textPlaceHolder = \(String(describing: TwilioViewController.textPlaceHolder))")
+        
         self.connectToARoom()
     }
     
+    // ------------------------------------------------------------------------------------------------------
     func switchCamera() {
+        let params =
+        [TwilioEmitter.ON_CAMERA_SWITCHED:TwilioEmitter.ON_CAMERA_SWITCHED,
+        ] as [String : Any]
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_CAMERA_SWITCHED, body:params);
         
-        TwilioEmitter.emitter.sendEvent(withName: "onCameraSwitched", body: [["onCameraSwitched":"onCameraSwitched","data":["onCameraSwitched":"value"]]]);
-        self.flipCamera()
-        print ("==== switchCamera")
+        print (" ==== switchCamera")
+        flipCamera()
     }
     
-    
+    // ------------------------------------------------------------------------------------------------------
     func mute() {
+        
         print (" ==== mute")
         
-        if (self.localAudioTrack != nil) {
-            self.localAudioTrack?.isEnabled = !(self.localAudioTrack?.isEnabled)!
+        if (TwilioViewController.localAudioTrack != nil) {
+            TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_MUTE, body: [TwilioEmitter.ON_MUTE:TwilioViewController.localAudioTrack?.isEnabled]);
+            
+            TwilioViewController.localAudioTrack?.isEnabled = !(TwilioViewController.localAudioTrack?.isEnabled)!
         }
     }
     
-    
+    // ------------------------------------------------------------------------------------------------------
     func closeCamera() {
+        
+        TwilioViewController.localVideoTrack!.isEnabled = !TwilioViewController.localVideoTrack!.isEnabled;
         print (" ==== closeCamera")
     }
     
-    
+    // ------------------------------------------------------------------------------------------------------
     func endCall() {
-        if(self.room !== nil){
-            self.room!.disconnect()
+        
+        if(TwilioViewController.room !== nil){
+            TwilioViewController.room!.disconnect()
             print (" ==== endCall")
+            TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.END_CALL, body: [TwilioEmitter.END_CALL:TwilioEmitter.END_CALL]);
+            
+            moveToLocaleVideoView()
         }
-    
     }
     
-    // ========================================================================================
+    /* deinit {
+     // We are done with camera
+     if let camera = self.camera {
+     camera.stopCapture()
+     self.camera = nil
+     }
+     }
+     */
+    
+    // ------------------------------------------------------------------------------------------------------
     //native twilio view ======================================================================
-    // ========================================================================================
-    
-    deinit {
-        // We are done with camera
-        if let camera = self.camera {
-            camera.stopCapture()
-            self.camera = nil
-        }
+    override func viewDidAppear(_ animated: Bool) {
+        print (" ==== viewDidAppear")
     }
     
-    
-    // MARK:- UIViewController
+    // ------------------------------------------------------------------------------------------------------
     override func viewDidLoad() {
-        super.viewDidLoad()
-        DispatchQueue.main.async {
-            self.view.addSubview(self.previewView)
+        if(TwilioViewController.camera == nil){
             self.startPreview()
         }
-      
-}
-    
-    override var prefersHomeIndicatorAutoHidden: Bool {
-        return self.room != nil
+        print (" ==== viewDidLoad")
     }
     
+    // ------------------------------------------------------------------------------------------------------
+    override var prefersHomeIndicatorAutoHidden: Bool {
+        print (" ==== prefersHomeIndicatorAutoHidden")
+        return TwilioViewController.room != nil
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
     func setupRemoteVideoView() {
-        self.remoteView = VideoView(frame: CGRect.zero, delegate: self)
-
+        self.remoteView?.isHidden=false
+        self.placeHolderContainer?.isHidden=true
+        //self.textLabel.removeFromSuperview()
+        self.remoteView = VideoView(frame: CGRect.zero)
+        self.remoteView!.tag = 100
         self.view.insertSubview(self.remoteView!, at: 0)
         
-        // `VideoView` supports scaleToFill, scaleAspectFill and scaleAspectFit
-        // scaleAspectFit is the default mode when you create `VideoView` programmatically.
         self.remoteView!.contentMode = .scaleAspectFill;
-
+        
         self.remoteView!.frame = self.view.bounds
-      
+        
         self.remoteView?.sendSubviewToBack(self.previewView)
-
+        
         self.previewView.frame =
-        CGRect(x: self.view.frame.width/5, y:72, width: self.view.frame.height/8, height: self.view.frame.height/8)
-
+        CGRect(x: self.view.frame.width/3.5, y:self.view.frame.height/25, width: self.view.frame.height/11, height: self.view.frame.height/10)
+        self.previewView.layer.cornerRadius = 15.0
     }
     
+    // ------------------------------------------------------------------------------------------------------
+    func moveToLocaleVideoView() {
+        self.remoteView?.removeFromSuperview()
+        self.previewView.removeFromSuperview()
+        self.previewView = VideoView(frame: CGRect.zero)
+        self.view.insertSubview(self.previewView, at: 0)
+        self.previewView.frame = self.view.bounds
+        self.previewView.contentMode = .scaleAspectFill;
+        self.startPreview()
+        
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
+    func replaceRemoteWithText(isImage:Bool){
+        
+        self.placeHolderContainer?.isHidden=false
+        self.remoteView?.isHidden=true
+        self.placeHolderContainer = UIView(frame: CGRect.zero)
+        self.placeHolderContainer?.frame = CGRect(x: 0, y:300, width: self.view.frame.width, height: self.view.frame.height/10)
+        
+        let txtView = UITextView(frame: CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height/20))
+
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        let text = NSAttributedString(string: TwilioViewController.textPlaceHolder!,
+                                      attributes: [NSAttributedString.Key.paragraphStyle:style])
+        txtView.text = TwilioViewController.textPlaceHolder
+        txtView.attributedText = text
+        //txtView.font = txtView.font!.withSize(24)
+        txtView.centerVerticalText()
+        self.placeHolderContainer!.backgroundColor = UIColor.red
+        self.view.addSubview(self.placeHolderContainer!)
+        self.placeHolderContainer!.tag = 200
+        self.view.insertSubview(self.placeHolderContainer!, at: 0)
+       // self.placeHolderContainer!.frame = self.view.bounds
+        self.placeHolderContainer!.sendSubviewToBack(self.previewView)
+        
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
     func connectToARoom() {
         
-        // self.connectButton.isEnabled = true;
-        // Prepare local media which we will share with Room Participants.
         self.prepareLocalMedia()
-        
-        // Preparing the connect options with the access token that we fetched (or hardcoded).
-        let connectOptions = ConnectOptions(token: accessToken!) { (builder) in
+        let connectOptions = ConnectOptions(token: TwilioViewController.accessToken!) { (builder) in
             
-            // Use the local media that we prepared earlier.
-            builder.audioTracks = self.localAudioTrack != nil ? [self.localAudioTrack!] : [LocalAudioTrack]()
-            builder.videoTracks = self.localVideoTrack != nil ? [self.localVideoTrack!] : [LocalVideoTrack]()
-            
-            // Use the preferred audio codec
-            if let preferredAudioCodec = Settings.shared.audioCodec {
-              //  builder.preferredAudioCodecs = [preferredAudioCodec]
-            }
-            
-            // Use Adpative Simulcast by setting builer.videoEncodingMode to .auto if preferredVideoCodec is .auto (default). The videoEncodingMode API is mutually exclusive with existing codec management APIs EncodingParameters.maxVideoBitrate and preferredVideoCodecs
-            let preferredVideoCodec = Settings.shared.videoCodec
-            if preferredVideoCodec == .auto {
-              //  builder.videoEncodingMode = .auto
-            } else if let codec = preferredVideoCodec.codec {
-              //  builder.preferredVideoCodecs = [codec]
-            }
-            
-            // Use the preferred encoding parameters
-            if let encodingParameters = Settings.shared.getEncodingParameters() {
-              //  builder.encodingParameters = encodingParameters
-            }
-            
-            // Use the preferred signaling region
-            if let signalingRegion = Settings.shared.signalingRegion {
-               // builder.region = signalingRegion
-            }
-            
-            // The name of the Room where the Client will attempt to connect to. Please note that if you pass an empty
-            // Room `name`, the Client will create one for you. You can get the name or sid from any connected Room.
-            builder.roomName = self.roomName
+            builder.audioTracks = TwilioViewController.localAudioTrack != nil ? [TwilioViewController.localAudioTrack!] : [LocalAudioTrack]()
+            builder.videoTracks = TwilioViewController.localVideoTrack != nil ? [TwilioViewController.localVideoTrack!] : [LocalVideoTrack]()
         }
         
-        // Connect to the Room using the options we provided.
-        room = TwilioVideoSDK.connect(options: connectOptions, delegate: self)
-        
-        
-        self.showRoomUI(inRoom: true)
-        
+        TwilioViewController.room = TwilioVideoSDK.connect(options: connectOptions, delegate: self)
     }
     
-    // MARK:- Private
+    // ------------------------------------------------------------------------------------------------------
+    func connect(sender: AnyObject) {
+        self.connectToARoom()
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
+    func disconnect(sender: AnyObject) {
+        TwilioViewController.room!.disconnect()
+        logMessage(messageText: "Attempting to disconnect from room \(TwilioViewController.room!.name)")
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
     func startPreview() {
-        //if PlatformUtils.isSimulator {
-        //    return
-        // }
-        
         let frontCamera = CameraSource.captureDevice(position: .front)
         let backCamera = CameraSource.captureDevice(position: .back)
         
@@ -201,28 +222,25 @@ class TwilioViewController: UIViewController, UITextFieldDelegate, VideoViewDele
             let options = CameraSourceOptions { (builder) in
                 if #available(iOS 13.0, *) {
                     // Track UIWindowScene events for the key window's scene.
-                    // The example app disables multi-window support in the .plist (see UIApplicationSceneManifestKey).
+                    //  disables multi-window support in the .plist (see UIApplicationSceneManifestKey).
                     builder.orientationTracker = UserInterfaceTracker(scene: UIApplication.shared.keyWindow!.windowScene!)
                 }
             }
             // Preview our local camera track in the local video preview view.
-            camera = CameraSource(options: options, delegate: self)
-            localVideoTrack = LocalVideoTrack(source: camera!, enabled: true, name: "Camera")
+            TwilioViewController.camera = CameraSource(options: options, delegate: self)
+            TwilioViewController.localVideoTrack = LocalVideoTrack(source: TwilioViewController.camera!, enabled: true, name: "Camera")
             
             // Add renderer to video track for local preview
-            localVideoTrack!.addRenderer(self.previewView)
+            TwilioViewController.localVideoTrack!.addRenderer(self.previewView)
             logMessage(messageText: "Video track created")
-            
-            
             
             if (frontCamera != nil && backCamera != nil) {
                 // We will flip camera on tap.
                 let tap = UITapGestureRecognizer(target: self, action: #selector(TwilioViewController.flipCamera))
                 self.previewView.addGestureRecognizer(tap)
-                
             }
             
-            camera!.startCapture(device: frontCamera != nil ? frontCamera! : backCamera!) { (captureDevice, videoFormat, error) in
+            TwilioViewController.camera!.startCapture(device: frontCamera != nil ? frontCamera! : backCamera!) { (captureDevice, videoFormat, error) in
                 if let error = error {
                     self.logMessage(messageText: "Capture failed with error.\ncode = \((error as NSError).code) error = \(error.localizedDescription)")
                 } else {
@@ -235,10 +253,11 @@ class TwilioViewController: UIViewController, UITextFieldDelegate, VideoViewDele
         }
     }
     
+    // ------------------------------------------------------------------------------------------------------
     @objc func flipCamera() {
         var newDevice: AVCaptureDevice?
         
-        if let camera = self.camera, let captureDevice = camera.device {
+        if let camera = TwilioViewController.camera, let captureDevice = camera.device {
             if captureDevice.position == .front {
                 newDevice = CameraSource.captureDevice(position: .back)
             } else {
@@ -248,8 +267,7 @@ class TwilioViewController: UIViewController, UITextFieldDelegate, VideoViewDele
             if let newDevice = newDevice {
                 camera.selectCaptureDevice(newDevice) { (captureDevice, videoFormat, error) in
                     if let error = error {
-                        print ("Error selecting capture device.\ncode = \((error as NSError).code) error = \(error.localizedDescription)")
-                        
+                        self.logMessage(messageText: "Error selecting capture device.\ncode = \((error as NSError).code) error = \(error.localizedDescription)")
                     } else {
                         self.previewView.shouldMirror = (captureDevice.position == .front)
                     }
@@ -258,41 +276,46 @@ class TwilioViewController: UIViewController, UITextFieldDelegate, VideoViewDele
         }
     }
     
+    // ------------------------------------------------------------------------------------------------------
+    func stopCamera() {
+        if  TwilioViewController.isCameraClosed == true{
+            if let source = AppScreenSource(), let track = LocalVideoTrack(source: source) {
+                TwilioViewController.room?.localParticipant?.unpublishVideoTrack(track)
+                print("Stop")
+                TwilioViewController.isCameraClosed = false
+                TwilioViewController.camera!.stopCapture()
+            }
+        } else {
+            if let source = AppScreenSource(), let track = LocalVideoTrack(source: source) {
+                TwilioViewController.room?.localParticipant?.publishVideoTrack(track)
+                print("Start")
+                TwilioViewController.isCameraClosed = true
+                self.startPreview()
+            }
+        }
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
     func prepareLocalMedia() {
         
         // We will share local audio and video when we connect to the Room.
         
         // Create an audio track.
-        if (localAudioTrack == nil) {
-            localAudioTrack = LocalAudioTrack(options: nil, enabled: true, name: "Microphone")
+        if (TwilioViewController.localAudioTrack == nil) {
+            TwilioViewController.localAudioTrack = LocalAudioTrack(options: nil, enabled: true, name: "Microphone")
             
-            if (localAudioTrack == nil) {
+            if (TwilioViewController.localAudioTrack == nil) {
                 logMessage(messageText: "Failed to create audio track")
             }
         }
         
         // Create a video track which captures from the camera.
-        if (localVideoTrack == nil) {
+        if (TwilioViewController.localVideoTrack == nil) {
             self.startPreview()
         }
     }
     
-    // Update our UI based upon if we are in a Room or not
-    func showRoomUI(inRoom: Bool) {
-        //self.roomLine!.isHidden = inRoom
-        //self.roomLabel!.isHidden = inRoom
-        self.navigationController?.setNavigationBarHidden(inRoom, animated: true)
-        UIApplication.shared.isIdleTimerDisabled = inRoom
-        
-        // Show / hide the automatic home indicator on modern iPhones.
-        self.setNeedsUpdateOfHomeIndicatorAutoHidden()
-    }
-    
-    func logMessage(messageText: String) {
-        NSLog(messageText)
-       // messageLabel.text = messageText
-    }
-    
+    // ------------------------------------------------------------------------------------------------------
     func renderRemoteParticipant(participant : RemoteParticipant) -> Bool {
         // This example renders the first subscribed RemoteVideoTrack from the RemoteParticipant.
         let videoPublications = participant.remoteVideoTracks
@@ -301,13 +324,19 @@ class TwilioViewController: UIViewController, UITextFieldDelegate, VideoViewDele
                publication.isTrackSubscribed {
                 setupRemoteVideoView()
                 subscribedVideoTrack.addRenderer(self.remoteView!)
-                self.remoteParticipant = participant
+                TwilioViewController.remoteParticipant = participant
                 return true
             }
         }
         return false
     }
     
+    // ------------------------------------------------------------------------------------------------------
+    func logMessage(messageText: String) {
+        NSLog(messageText)
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
     func renderRemoteParticipants(participants : Array<RemoteParticipant>) {
         for participant in participants {
             // Find the first renderable track.
@@ -318,54 +347,125 @@ class TwilioViewController: UIViewController, UITextFieldDelegate, VideoViewDele
         }
     }
     
+    // ------------------------------------------------------------------------------------------------------
     func cleanupRemoteParticipant() {
-        if self.remoteParticipant != nil {
+        if TwilioViewController.remoteParticipant != nil {
             self.remoteView?.removeFromSuperview()
             self.remoteView = nil
-            self.remoteParticipant = nil
+            TwilioViewController.remoteParticipant = nil
         }
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
+    func buildParticipant(participant: Participant) -> AnyObject {
+        return [TwilioEmitter.IDENTITY:participant.identity,TwilioEmitter.SID:participant.sid] as AnyObject;
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
+    func buildTrack(publication: TrackPublication)-> AnyObject {
+        let params =
+        [TwilioEmitter.TRACK_SID:publication.trackSid,
+         TwilioEmitter.TRACK_NAME: publication.trackName,
+         TwilioEmitter.ENABLED: publication.isTrackEnabled,
+        ] as AnyObject
+        
+        return params
+    }
+    
+    // ------------------------------------------------------------------------------------------------------
+    func buildParticipantTrack(participant: Participant,publication: TrackPublication)-> AnyObject {
+        let participantMap = buildParticipant(participant: participant)
+        let trackMap = buildTrack(publication: publication)
+        
+        let params =
+        [TwilioEmitter.PARTICIPANT:participantMap,
+         TwilioEmitter.TRACK:trackMap,
+        ] as AnyObject
+        
+        return params
     }
 }
 
-
+// **********************************************************************************************************
 // MARK:- RoomDelegate
 extension TwilioViewController : RoomDelegate {
     func roomDidConnect(room: Room) {
+        
         logMessage(messageText: "Connected to room \(room.name) as \(room.localParticipant?.identity ?? "")")
         
-        // This example only renders 1 RemoteVideoTrack at a time. Listen for all events to decide which track to render.
+        let participants = room.remoteParticipants
+        let localParticipant = room.localParticipant
+        var participantsArray = [AnyObject]()
+        
         for remoteParticipant in room.remoteParticipants {
             remoteParticipant.delegate = self
         }
+        for participant in participants {
+            participantsArray.append(buildParticipant(participant: participant))
+        }
+        participantsArray.append(buildParticipant(participant: localParticipant!))
+        let params =
+        [TwilioEmitter.ROOM_NAME:room.name,
+         TwilioEmitter.ROOM_SID:room.sid,
+         TwilioEmitter.PARTICIPANTS:participantsArray,
+         TwilioEmitter.LOCAL_PARTICIPANT:buildParticipant(participant: localParticipant!),
+        ] as [String : Any]
+        
+        TwilioEmitter.emitter.sendEvent(withName: "onRoomDidConnect", body:params);
     }
     
     func roomDidDisconnect(room: Room, error: Error?) {
         logMessage(messageText: "Disconnected from room \(room.name), error = \(String(describing: error))")
         
-        self.cleanupRemoteParticipant()
-        self.room = nil
+        let params =
+        [TwilioEmitter.ROOM_NAME:room.name,
+         TwilioEmitter.ROOM_SID:room.sid,
+        ] as [String : Any]
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_DISCONNECTED, body:params);
         
-        self.showRoomUI(inRoom: false)
+        self.cleanupRemoteParticipant()
+        TwilioViewController.room = nil
+        self.moveToLocaleVideoView()
     }
     
     func roomDidFailToConnect(room: Room, error: Error) {
         logMessage(messageText: "Failed to connect to room with error = \(String(describing: error))")
-        self.room = nil
+        TwilioViewController.room = nil
         
-        self.showRoomUI(inRoom: false)
+        let params =
+        [
+            TwilioEmitter.ERROR:error.localizedDescription,
+            TwilioEmitter.ROOM_NAME:room.name,
+            TwilioEmitter.ROOM_SID:room.sid,
+        ] as [String : Any]
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_CONNECT_FAILURE, body:params);
     }
     
     func roomIsReconnecting(room: Room, error: Error) {
         logMessage(messageText: "Reconnecting to room \(room.name), error = \(String(describing: error))")
+        
     }
     
     func roomDidReconnect(room: Room) {
         logMessage(messageText: "Reconnected to room \(room.name)")
+        let params =
+        [TwilioEmitter.ROOM_NAME:room.name,
+         TwilioEmitter.ROOM_SID:room.sid,
+        ] as [String : Any]
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_RE_CONNECTED, body:params);
+        
     }
     
     func participantDidConnect(room: Room, participant: RemoteParticipant) {
         // Listen for events from all Participants to decide which RemoteVideoTrack to render.
         participant.delegate = self
+        let params =
+        [TwilioEmitter.ROOM_NAME:room.name,
+         TwilioEmitter.ROOM_SID:room.sid,
+         TwilioEmitter.PARTICIPANT_SID:participant.sid as Any,
+        ] as [String : Any]
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_CONNECTED, body:params);
+        
         
         logMessage(messageText: "Participant \(participant.identity) connected with \(participant.remoteAudioTracks.count) audio and \(participant.remoteVideoTracks.count) video tracks")
     }
@@ -373,10 +473,19 @@ extension TwilioViewController : RoomDelegate {
     func participantDidDisconnect(room: Room, participant: RemoteParticipant) {
         logMessage(messageText: "Room \(room.name), Participant \(participant.identity) disconnected")
         
-        // Nothing to do in this example. Subscription events are used to add/remove renderers.
+        let params =
+        [TwilioEmitter.ROOM_NAME:room.name,
+         TwilioEmitter.ROOM_SID:room.sid,
+         TwilioEmitter.PARTICIPANT_SID:participant.sid as Any,
+        ] as [String : Any]
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_DISCONNECTED, body:params);
+        
+        self.moveToLocaleVideoView()
     }
 }
 
+
+// **********************************************************************************************************
 // MARK:- RemoteParticipantDelegate
 extension TwilioViewController : RemoteParticipantDelegate {
     
@@ -404,12 +513,31 @@ extension TwilioViewController : RemoteParticipantDelegate {
         logMessage(messageText: "Participant \(participant.identity) unpublished \(publication.trackName) audio track")
     }
     
+    func didSubscribeToDataTrack(dataTrack: RemoteDataTrack, publication: RemoteDataTrackPublication, participant: RemoteParticipant) {
+        
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_ADDED_DATA_TRACK, body:params);
+        
+    }
+    
+    func didUnsubscribeFromDataTrack(dataTrack: RemoteDataTrack, publication: RemoteDataTrackPublication, participant: RemoteParticipant) {
+        
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_REMOVED_DATA_TRACK, body:params);
+        
+    }
     func didSubscribeToVideoTrack(videoTrack: RemoteVideoTrack, publication: RemoteVideoTrackPublication, participant: RemoteParticipant) {
         // The LocalParticipant is subscribed to the RemoteParticipant's video Track. Frames will begin to arrive now.
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_ADDED_VIDEO_TRACK, body:params);
+        
         
         logMessage(messageText: "Subscribed to \(publication.trackName) video track for Participant \(participant.identity)")
         
-        if (self.remoteParticipant == nil) {
+        if (TwilioViewController.remoteParticipant == nil) {
             _ = renderRemoteParticipant(participant: participant)
         }
     }
@@ -418,13 +546,17 @@ extension TwilioViewController : RemoteParticipantDelegate {
         // We are unsubscribed from the remote Participant's video Track. We will no longer receive the
         // remote Participant's video.
         
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_REMOVED_VIDEO_TRACK, body:params);
+        
         logMessage(messageText: "Unsubscribed from \(publication.trackName) video track for Participant \(participant.identity)")
         
-        if self.remoteParticipant == participant {
+        if TwilioViewController.remoteParticipant == participant {
             cleanupRemoteParticipant()
             
             // Find another Participant video to render, if possible.
-            if var remainingParticipants = room?.remoteParticipants,
+            if var remainingParticipants = TwilioViewController.room?.remoteParticipants,
                let index = remainingParticipants.firstIndex(of: participant) {
                 remainingParticipants.remove(at: index)
                 renderRemoteParticipants(participants: remainingParticipants)
@@ -435,6 +567,9 @@ extension TwilioViewController : RemoteParticipantDelegate {
     func didSubscribeToAudioTrack(audioTrack: RemoteAudioTrack, publication: RemoteAudioTrackPublication, participant: RemoteParticipant) {
         // We are subscribed to the remote Participant's audio Track. We will start receiving the
         // remote Participant's audio now.
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_ADDED_AUDIO_TRACK, body:params);
         
         logMessage(messageText: "Subscribed to \(publication.trackName) audio track for Participant \(participant.identity)")
     }
@@ -442,23 +577,40 @@ extension TwilioViewController : RemoteParticipantDelegate {
     func didUnsubscribeFromAudioTrack(audioTrack: RemoteAudioTrack, publication: RemoteAudioTrackPublication, participant: RemoteParticipant) {
         // We are unsubscribed from the remote Participant's audio Track. We will no longer receive the
         // remote Participant's audio.
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_REMOVED_AUDIO_TRACK, body:params);
         
         logMessage(messageText: "Unsubscribed from \(publication.trackName) audio track for Participant \(participant.identity)")
     }
     
     func remoteParticipantDidEnableVideoTrack(participant: RemoteParticipant, publication: RemoteVideoTrackPublication) {
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_ENABLED_VIDEO_TRACK, body:params);
+        
+        self.setupRemoteVideoView()
         logMessage(messageText: "Participant \(participant.identity) enabled \(publication.trackName) video track")
     }
     
     func remoteParticipantDidDisableVideoTrack(participant: RemoteParticipant, publication: RemoteVideoTrackPublication) {
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_DISABLED_VIDEO_TRACK, body:params);
+        self.replaceRemoteWithText(isImage: TwilioViewController.imgUriPlaceHolder != nil)
         logMessage(messageText: "Participant \(participant.identity) disabled \(publication.trackName) video track")
     }
     
     func remoteParticipantDidEnableAudioTrack(participant: RemoteParticipant, publication: RemoteAudioTrackPublication) {
+        
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_ENABLED_AUDIO_TRACK, body:params);
+        
         logMessage(messageText: "Participant \(participant.identity) enabled \(publication.trackName) audio track")
     }
     
     func remoteParticipantDidDisableAudioTrack(participant: RemoteParticipant, publication: RemoteAudioTrackPublication) {
+        
+        let params = buildParticipantTrack(participant: participant, publication: publication)
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_DISABLED_AUDIO_TRACK, body:params);
+        
         logMessage(messageText: "Participant \(participant.identity) disabled \(publication.trackName) audio track")
     }
     
@@ -469,22 +621,54 @@ extension TwilioViewController : RemoteParticipantDelegate {
     func didFailToSubscribeToVideoTrack(publication: RemoteVideoTrackPublication, error: Error, participant: RemoteParticipant) {
         logMessage(messageText: "FailedToSubscribe \(publication.trackName) video track, error = \(String(describing: error))")
     }
-}
-
-
-extension UIViewController {
-    func embed(_ viewController:UIViewController, inView view:UIView){
-        viewController.willMove(toParent: self)
-        viewController.view.frame = view.bounds
-        view.addSubview(viewController.view)
-        self.addChild(viewController)
-        viewController.didMove(toParent: self)
+    
+    func remoteParticipantNetworkQualityLevelDidChange(participant: RemoteParticipant, networkQualityLevel: NetworkQualityLevel) {
+        let params = buildParticipant(participant: participant)
+        let params2 =
+        [TwilioEmitter.IS_LOCAL_USER:true,
+         TwilioEmitter.QUALITY:networkQualityLevel.rawValue - 1,
+        ] as [String : Any]
+        params.add(params2)
+        
+        TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_NETWORK_QUALITY_LEVELS_CHANGED, body:params);
+        
     }
 }
 
+// **********************************************************************************************************
 // MARK:- CameraSourceDelegate
 extension TwilioViewController : CameraSourceDelegate {
     func cameraSourceDidFail(source: CameraSource, error: Error) {
         logMessage(messageText: "Camera source failed with error: \(error.localizedDescription)")
+    }
+}
+
+// **********************************************************************************************************
+// MARK:- CameraCapturerDelegate
+/*extension TwilioViewController : TVICameraCapturerDelegate {
+ func cameraCapturer(_ capturer: TVICameraCapturer, didStartWith source: TVICameraCaptureSource) {
+ // Layout the camera preview with dimensions appropriate for our orientation.
+ self.view.setNeedsLayout()
+ 
+ if (TwilioViewController.localVideoTrack!.isEnabled) {
+ TwilioViewController.localVideoTrack!.isEnabled = true;
+ }
+ }
+ 
+ func cameraCapturerWasInterrupted(_ capturer: CameraCapturer, reason: AVCaptureSessionInterruptionReason) {
+ TwilioViewController.localVideoTrack!.isEnabled = false
+ }
+ }
+ */
+
+extension UITextView {
+
+    func centerVerticalText() {
+        self.textAlignment = .center
+        let fitSize = CGSize(width: bounds.width, height: CGFloat.greatestFiniteMagnitude)
+        let size = sizeThatFits(fitSize)
+        let calculate = (bounds.size.height - size.height * zoomScale) / 2
+        let offset = max(1, calculate)
+        contentOffset.y = -offset
     }
 }

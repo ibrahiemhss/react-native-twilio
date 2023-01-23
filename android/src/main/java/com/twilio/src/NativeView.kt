@@ -234,16 +234,12 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       val params = Arguments.createMap()
       params.putString(Constants.ROOM_NAME, room.name)
       params.putString(Constants.ROOM_SID, room.getSid())
-      sendEvent(reactApplicationContext, Constants.ON_CONNECTED, params)
+      sendEvent(reactApplicationContext, Constants.ON_RE_CONNECTED, params)
       mReconnectingProgressBar!!.visibility = View.GONE
     }
 
     override fun onReconnecting(room: Room, twilioException: TwilioException) {
       mReconnectingProgressBar!!.visibility = View.VISIBLE
-      val params = Arguments.createMap()
-      params.putString(Constants.ROOM_NAME, room.name)
-      params.putString(Constants.ROOM_SID, room.getSid())
-      sendEvent(reactApplicationContext, Constants.ON_RE_CONNECTED, params)
       Log.d(TAG, "onReconnecting")
 
     }
