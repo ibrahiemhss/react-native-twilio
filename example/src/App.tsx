@@ -14,10 +14,10 @@ export default function App() {
     'https://develop.watchbeem.com/profile_avatars/c5f9c093-3166-47e9-b83e-84f6d72c7151/avatar.jpg?1669199370556.498';
 
   const token1 =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQ1MTEyMzgiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDUxNDgzOCwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjkiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.gO_eU-hRglY5FPbRIKjY2oKL550KNCrSWxe8RAz-ZMU';
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQ1OTAzMDkiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDU5MzkwOSwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjYiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.DG8YFXALLD65xePQHCt70bSVj6x232eDLZZwgNh1q6Q';
   const token2 =
     'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQ1MTEyNTUiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDUxNDg1NSwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjEwIiwidmlkZW8iOnsicm9vbSI6InJvb20xIn19fQ.4XtlfzMthV1RgJZDoM3fzahIm2dPV1RdT12EPsMQatw';
-  TwilioView.initialize(token1);
+  TwilioView.initialize();
   React.useEffect(() => {
     const subscriptions = [
       twilioEmitter.addListener(EventType.ON_VIDEO_ENABLED, (data) => {
@@ -265,7 +265,7 @@ export default function App() {
         src={{
           token: Platform.OS === 'ios' ? token2 : token1,
           roomName: 'room1',
-          imgUriPlaceHolder: imgUri,
+          //imgUriPlaceHolder: imgUri,
           textPlaceHolder: 'No Preview',
         }}
         //trackSid={null}
