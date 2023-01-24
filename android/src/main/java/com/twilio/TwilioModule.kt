@@ -16,18 +16,4 @@ class TwilioModule(reactContext: ReactApplicationContext) :
   init {
     mReactApplicationContext = reactContext
   }
-
-  @ReactMethod
-  fun initialize(accessToken: String?) {
-    Log.d("NativeViewTwilio", "initialize twilio accessToken=:${accessToken}")
-    if (mReactApplicationContext != null && accessToken!=null) {
-      val sharedPref = mReactApplicationContext!!
-        .getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE) ?: return
-      with(sharedPref.edit()) {
-        putString(Constants.PREF_TOEKN, accessToken)
-        apply()
-      }
-    }
-  }
-
 }

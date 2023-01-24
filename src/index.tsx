@@ -118,10 +118,7 @@ class TwilioView extends Component<TwilioProps> {
       args
     );
   }
-  static initialize(token: string) {
-    if (Platform.OS === 'android') {
-      NativeModules.TwilioView.initialize(token);
-    }
+  static initialize() {
     const subscribeRegisterAndroid = TwilioView.listenTwilio();
     return () => {
       subscribeRegisterAndroid();

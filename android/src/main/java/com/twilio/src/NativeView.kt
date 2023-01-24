@@ -5,21 +5,24 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.media.AudioManager
 import android.os.Build
 import android.os.Parcelable
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.preference.PreferenceManager
+import com.bumptech.glide.Glide
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.modules.core.PermissionAwareActivity
@@ -37,6 +40,7 @@ import tvi.webrtc.VideoSink
 import java.util.*
 import kotlin.properties.Delegates
 
+
 @SuppressLint("MissingInflatedId")
 class NativeView(context: Context, reactApplicationContext: ReactApplicationContext, isFromReact: Boolean, activity: Activity, permissionAwareActivity:PermissionAwareActivity) :
   RelativeLayout(context) , PermissionListener, LifecycleOwner {
@@ -48,6 +52,9 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
   private val CAMERA_PERMISSION_INDEX = 0
   private val MIC_PERMISSION_INDEX = 1
   private lateinit var accessToken: String
+  val shape = GradientDrawable()
+  private  var imageUrlPlaceholder: String?=null
+  private  var textPlaceholder: String?=null
   public var myRoom: Room? = null
   public var myActivity: Activity? = null
   public var myPermissionAwareActivity: PermissionAwareActivity? = null
@@ -64,8 +71,12 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
   private var mReconnectingProgressBar: ProgressBar? = null
   private var mLocalVideoActionFab: FloatingActionButton? = null
   private var mThumbnailVideoView: VideoView? = null
+  private var mThumbnailView: RoundedCornerLayout? = null
   private var mPrimaryVideoView: VideoView? = null
   private var mReactApplicationContext: ReactApplicationContext? = null
+  private var placeHolderImageView: ImageView? = null
+  private var placeHolderView: LinearLayout? = null
+  private var placecHolderTextView: AppCompatTextView? = null
 
   val cameraCapturerCompat by lazy {
     CameraCapturerCompat(this.context, CameraCapturerCompat.Source.FRONT_CAMERA)
@@ -89,9 +100,27 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     mReconnectingProgressBar =
       mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
     mThumbnailVideoView = mainView!!.findViewById<View>(R.id.thumbnailVideoView) as VideoView?
+    mThumbnailView = mainView!!.findViewById<View>(R.id.thumbnailVideo) as RoundedCornerLayout?
     mPrimaryVideoView = mainView!!.findViewById<View>(R.id.primaryVideoView) as VideoView?
-    mThumbnailVideoView!!.visibility = INVISIBLE
+    placeHolderImageView = mainView!!.findViewById<View>(R.id.placeHolderImageView) as ImageView?
+    placeHolderView = mainView!!.findViewById<View>(R.id.placeHolderView) as LinearLayout?
+    placecHolderTextView = mainView!!.findViewById<View>(R.id.placecHolderTextView) as AppCompatTextView?
 
+
+    shape.shape = GradientDrawable.RECTANGLE
+    shape.setColor(Color.WHITE)
+    shape.setStroke(3, Color.WHITE)
+    shape.setCornerRadius(20F);
+    mThumbnailVideoView!!.setBackgroundDrawable(shape);
+    mThumbnailVideoView!!.setBackground(shape);
+
+    mThumbnailVideoView!!.clipToOutline = true
+    mThumbnailVideoView!!.visibility = INVISIBLE
+    mThumbnailView!!.visibility = INVISIBLE
+
+    placeHolderImageView!!.visibility = INVISIBLE
+    placeHolderView!!.visibility = INVISIBLE
+    placecHolderTextView!!.visibility = INVISIBLE
 
     //-------------------------------------------------
 
@@ -639,6 +668,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       remoteVideoTrackPublication: RemoteVideoTrackPublication,
       remoteVideoTrack: RemoteVideoTrack
     ) {
+      setPrimaryViewPlaceholder(true)
+
       Log.i(
         TAG, "onVideoTrackSubscribed: " +
           "[RemoteParticipant: identity=${remoteParticipant.identity}], " +
@@ -654,6 +685,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       remoteVideoTrackPublication: RemoteVideoTrackPublication,
       remoteVideoTrack: RemoteVideoTrack
     ) {
+      setPrimaryViewPlaceholder(false)
+
       Log.i(
         TAG, "onVideoTrackUnsubscribed: " +
           "[RemoteParticipant: identity=${remoteParticipant.identity}], " +
@@ -669,6 +702,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       remoteVideoTrackPublication: RemoteVideoTrackPublication,
       twilioException: TwilioException
     ) {
+      setPrimaryViewPlaceholder(false)
+
       Log.i(
         TAG, "onVideoTrackSubscriptionFailed: " +
           "[RemoteParticipant: identity=${remoteParticipant.identity}], " +
@@ -694,6 +729,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     ) {
       val event = buildParticipantVideoEvent(remoteParticipant, remoteVideoTrackPublication)
       sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_ENABLED_VIDEO_TRACK, event)
+      setPrimaryViewPlaceholder(true)
 
     }
 
@@ -703,7 +739,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     ) {
       val event = buildParticipantVideoEvent(remoteParticipant, remoteVideoTrackPublication)
       sendEvent(reactApplicationContext, Constants.ON_PARTICIPANT_DISABLED_VIDEO_TRACK, event)
-
+      setPrimaryViewPlaceholder(false)
     }
 
     override fun onAudioTrackDisabled(
@@ -795,9 +831,15 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
   }
 
   fun connectToRoom(src: ReadableMap) {
-    setAccessTokenFromPref()
-    if (this.accessToken == null || this.accessToken.isEmpty()) {
+    // setAccessTokenFromPref()
+    if (src.hasKey("token")) {
       this.accessToken = src.getString("token")!!
+    }
+    if (src.hasKey("imgUriPlaceHolder")) {
+      this.imageUrlPlaceholder = src.getString("imgUriPlaceHolder")!!
+    }
+    if (src.hasKey("textPlaceHolder")) {
+      this.textPlaceholder = src.getString("textPlaceHolder")!!
     }
     if (this.accessToken == null) return
     if (this.accessToken.isEmpty()) return
@@ -871,6 +913,37 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     }
   }
 
+  fun setPrimaryViewPlaceholder(isVideoAvailable:Boolean) {
+    if(isVideoAvailable){
+      mPrimaryVideoView!!.visibility= VISIBLE
+      placecHolderTextView!!.visibility= INVISIBLE
+      placeHolderImageView!!.visibility= INVISIBLE
+      placeHolderView!!.visibility= INVISIBLE
+
+    }else{
+      if(this.imageUrlPlaceholder != null){
+        Glide.with(context)
+          .load(this.imageUrlPlaceholder)
+          .into(placeHolderImageView!!)
+        placeHolderImageView!!.visibility= VISIBLE
+        mPrimaryVideoView!!.visibility= INVISIBLE
+
+      }else{
+        if (this.placecHolderTextView!=null) {
+          val temp = this.placecHolderTextView.toString()
+          this.placecHolderTextView!!.text=temp
+        }else{
+          val temp = "Got it!"
+          this.placecHolderTextView!!.text=temp
+
+        }
+        placeHolderView!!.visibility= VISIBLE
+        placecHolderTextView!!.visibility= VISIBLE
+        mPrimaryVideoView!!.visibility= INVISIBLE
+      }
+    }
+  }
+
   /*
    * Called when participant joins the room
    */
@@ -921,6 +994,10 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
         TAG, "moveLocalVideoToThumbnailView ==== 1"
       )
       mThumbnailVideoView!!.visibility = View.VISIBLE
+      mThumbnailView!!.visibility = View.VISIBLE
+      mThumbnailVideoView!!.clipToOutline = true
+      mThumbnailVideoView!!.setBackgroundDrawable(shape);
+      mThumbnailVideoView!!.setBackground(shape);
       with(localVideoTrack) {
         this?.removeSink(mPrimaryVideoView!!)
         this?.addSink(mThumbnailVideoView!!)
@@ -960,6 +1037,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     )
     if (mThumbnailVideoView!!.visibility == View.VISIBLE) {
       mThumbnailVideoView!!.visibility = View.INVISIBLE
+      mThumbnailView!!.visibility = View.INVISIBLE
       with(localVideoTrack) {
         this?.removeSink(mThumbnailVideoView!!)
         this?.addSink(mPrimaryVideoView!!)
