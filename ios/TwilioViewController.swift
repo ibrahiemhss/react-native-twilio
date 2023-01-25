@@ -14,9 +14,9 @@ class TwilioViewController: UIViewController {
     public static var localVideoTrack: LocalVideoTrack?
     public static var localAudioTrack: LocalAudioTrack?
     public static var remoteParticipant: RemoteParticipant?
+
     //
     var remoteView: VideoView?
-    var placeHolderContainer: UIView?
     
     public static var textLabel = UILabel(frame: CGRect.zero)
     var previewView:VideoView = VideoView.init()
@@ -24,9 +24,13 @@ class TwilioViewController: UIViewController {
     public static var accessToken : String?
     public static var isStopedCamera: Bool = false
     public static var imgUriPlaceHolder : String?
+    public static var imageViewPlaceHolder:UIImageView = UIImageView.init()
     public static var textPlaceHolder : String?
+    public static var localTextPlaceHolder : String?
     public static var isCameraClosed : Bool?
-    
+    public static var placeHolderContainer: UIView?
+    public static var localPlaceHolderContainer: UIView?
+
     // ------------------------------------------------------------------------------------------------------
     func setDataSrc( data :NSDictionary,rect :CGRect){
         TwilioViewController.viewRect=rect
@@ -48,6 +52,11 @@ class TwilioViewController: UIViewController {
         guard let _textPlaceHolder = dic.object(forKey: "textPlaceHolder") as? String else {
             return
         }
+        guard let _localTextPlaceHolder = dic.object(forKey: "localTextPlaceHolder") as? String else {
+            return
+        }
+        
+        TwilioViewController.localTextPlaceHolder = _localTextPlaceHolder
         TwilioViewController.accessToken = _token
         TwilioViewController.roomName = _roomName
         TwilioViewController.imgUriPlaceHolder = _imgUriPlaceHolder
@@ -85,6 +94,15 @@ class TwilioViewController: UIViewController {
     func closeCamera() {
         
         TwilioViewController.localVideoTrack!.isEnabled = !TwilioViewController.localVideoTrack!.isEnabled;
+        if(TwilioViewController.localVideoTrack!.isEnabled){
+            TwilioViewController.localPlaceHolderContainer?.isHidden=true
+            TwilioViewController.localPlaceHolderContainer!.removeFromSuperview()
+            self.view.addSubview(self.previewView)
+            
+        }else{
+            replaceRLocal()
+            
+        }
         print (" ==== closeCamera")
     }
     
@@ -132,7 +150,8 @@ class TwilioViewController: UIViewController {
     // ------------------------------------------------------------------------------------------------------
     func setupRemoteVideoView() {
         self.remoteView?.isHidden=false
-        self.placeHolderContainer?.isHidden=true
+        TwilioViewController.placeHolderContainer?.isHidden=true
+        TwilioViewController.imageViewPlaceHolder.isHidden=true
         //self.textLabel.removeFromSuperview()
         self.remoteView = VideoView(frame: CGRect.zero)
         self.remoteView!.tag = 100
@@ -162,32 +181,72 @@ class TwilioViewController: UIViewController {
     }
     
     // ------------------------------------------------------------------------------------------------------
-    func replaceRemoteWithText(isImage:Bool){
-        
-        self.placeHolderContainer?.isHidden=false
+    func replaceRemote(isImage:Bool){
         self.remoteView?.isHidden=true
-        self.placeHolderContainer = UIView(frame: CGRect.zero)
-        self.placeHolderContainer?.frame = CGRect(x: 0, y:300, width: self.view.frame.width, height: self.view.frame.height/10)
-        
-        let txtView = UITextView(frame: CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height/20))
+        self.remoteView?.removeFromSuperview()
+        if(isImage){
+            TwilioViewController.imageViewPlaceHolder.isHidden=false
+            let image = UIImage(named: "default")
+            TwilioViewController.imageViewPlaceHolder.frame=CGRect(x: 0, y:0, width: self.view.frame.width, height: self.view.frame.height)
+            TwilioViewController.imageViewPlaceHolder.frame.size=TwilioViewController.imageViewPlaceHolder.intrinsicScaledContentSize!
+            
+            self.view.addSubview(TwilioViewController.imageViewPlaceHolder)
+            TwilioViewController.imageViewPlaceHolder.sendSubviewToBack(self.previewView)
+            TwilioViewController.imageViewPlaceHolder.load(url: URL(string:TwilioViewController.imgUriPlaceHolder! )!)
+            
 
-        let style = NSMutableParagraphStyle()
-        style.alignment = .center
-        let text = NSAttributedString(string: TwilioViewController.textPlaceHolder!,
-                                      attributes: [NSAttributedString.Key.paragraphStyle:style])
-        txtView.text = TwilioViewController.textPlaceHolder
-        txtView.attributedText = text
-        //txtView.font = txtView.font!.withSize(24)
-        txtView.centerVerticalText()
-        self.placeHolderContainer!.backgroundColor = UIColor.red
-        self.view.addSubview(self.placeHolderContainer!)
-        self.placeHolderContainer!.tag = 200
-        self.view.insertSubview(self.placeHolderContainer!, at: 0)
-       // self.placeHolderContainer!.frame = self.view.bounds
-        self.placeHolderContainer!.sendSubviewToBack(self.previewView)
+        }else{
+            TwilioViewController.placeHolderContainer?.isHidden=false
+            TwilioViewController.placeHolderContainer = UIView(frame: CGRect.zero)
+            TwilioViewController.placeHolderContainer?.frame = CGRect(x: 0, y:0, width: self.view.frame.width, height: self.view.frame.height)
+        
+            let label:UILabel = UILabel(frame: CGRectMake(0, 0, self.view.frame.width, CGFloat.greatestFiniteMagnitude))
+                label.numberOfLines = 0
+                label.lineBreakMode = NSLineBreakMode.byWordWrapping
+                //label.font = font
+                label.text = TwilioViewController.textPlaceHolder
+                label.sizeToFit()
+            label.center=TwilioViewController.placeHolderContainer!.center
+            TwilioViewController.placeHolderContainer!.backgroundColor = UIColor.gray
+            self.view.addSubview(TwilioViewController.placeHolderContainer!)
+            TwilioViewController.placeHolderContainer!.addSubview(label)
+            TwilioViewController.placeHolderContainer!.tag = 200
+            self.view.insertSubview(TwilioViewController.placeHolderContainer!, at: 0)
+           // self.placeHolderContainer!.frame = self.view.bounds
+            TwilioViewController.placeHolderContainer!.sendSubviewToBack(self.previewView)
+        
+        }
         
     }
     
+    // ------------------------------------------------------------------------------------------------------
+    func replaceRLocal(){
+        self.previewView.isHidden=true
+        self.previewView.removeFromSuperview()
+
+        TwilioViewController.localPlaceHolderContainer?.isHidden=false
+        TwilioViewController.localPlaceHolderContainer = UIView(frame: CGRect.zero)
+        
+        let label:UILabel = UILabel(frame: CGRectMake(0, 0, self.view.frame.width, CGFloat.greatestFiniteMagnitude))
+            label.numberOfLines = 0
+            label.lineBreakMode = NSLineBreakMode.byWordWrapping
+            //label.font = font
+            label.text = TwilioViewController.localTextPlaceHolder
+            label.sizeToFit()
+        label.center=TwilioViewController.localPlaceHolderContainer!.center
+        TwilioViewController.localPlaceHolderContainer!.backgroundColor = UIColor.gray
+        self.view.addSubview(TwilioViewController.localPlaceHolderContainer!)
+        TwilioViewController.localPlaceHolderContainer!.addSubview(label)
+        TwilioViewController.localPlaceHolderContainer!.tag = 300
+        
+        TwilioViewController.localPlaceHolderContainer?.frame =
+        CGRect(x: self.view.frame.width/3.5, y:self.view.frame.height/25, width: self.view.frame.height/11, height: self.view.frame.height/10)
+        TwilioViewController.localPlaceHolderContainer!.layer.cornerRadius = 15.0
+        
+        self.view.addSubview(TwilioViewController.localPlaceHolderContainer!)
+        
+        
+    }
     // ------------------------------------------------------------------------------------------------------
     func connectToARoom() {
         
@@ -594,7 +653,7 @@ extension TwilioViewController : RemoteParticipantDelegate {
     func remoteParticipantDidDisableVideoTrack(participant: RemoteParticipant, publication: RemoteVideoTrackPublication) {
         let params = buildParticipantTrack(participant: participant, publication: publication)
         TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_DISABLED_VIDEO_TRACK, body:params);
-        self.replaceRemoteWithText(isImage: TwilioViewController.imgUriPlaceHolder != nil)
+        self.replaceRemote(isImage: TwilioViewController.imgUriPlaceHolder != nil)
         logMessage(messageText: "Participant \(participant.identity) disabled \(publication.trackName) video track")
     }
     
@@ -661,14 +720,49 @@ extension TwilioViewController : CameraSourceDelegate {
  }
  */
 
-extension UITextView {
 
-    func centerVerticalText() {
-        self.textAlignment = .center
-        let fitSize = CGSize(width: bounds.width, height: CGFloat.greatestFiniteMagnitude)
-        let size = sizeThatFits(fitSize)
-        let calculate = (bounds.size.height - size.height * zoomScale) / 2
-        let offset = max(1, calculate)
-        contentOffset.y = -offset
+extension UIImageView {
+    func load(url: URL) {
+        DispatchQueue.global().async { [weak self] in
+            if let data = try? Data(contentsOf: url) {
+                if let image = UIImage(data: data) {
+                    DispatchQueue.main.async {
+                        self?.image = image
+                    }
+                }
+            }
+        }
+    }
+    var intrinsicScaledContentSize: CGSize? {
+        switch contentMode {
+        case .scaleAspectFit:
+            // aspect fit
+            if let image = self.image {
+                let imageWidth = image.size.width
+                let imageHeight = image.size.height
+                let viewWidth = self.frame.size.width
+                
+                let ratio = viewWidth/imageWidth
+                let scaledHeight = imageHeight * ratio
+                
+                return CGSize(width: viewWidth, height: scaledHeight)
+            }
+        case .scaleAspectFill:
+            // aspect fill
+            if let image = self.image {
+                let imageWidth = image.size.width
+                let imageHeight = image.size.height
+                let viewHeight = self.frame.size.width
+                
+                let ratio = viewHeight/imageHeight
+                let scaledWidth = imageWidth * ratio
+                
+                return CGSize(width: scaledWidth, height: imageHeight)
+            }
+            
+        default: return self.bounds.size
+        }
+        return nil
+
     }
 }
