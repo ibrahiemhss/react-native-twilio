@@ -21,6 +21,8 @@
       android:layout_marginEnd="24dp"
       android:layout_gravity="end"
       app:tviMirror="true"
+      android:focusable="true"
+      app:tviOverlaySurface="true"
       android:visibility="visible" />
     <LinearLayout
       android:id="@+id/thumbnailPlaceHolderView"

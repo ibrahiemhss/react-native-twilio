@@ -14,9 +14,9 @@ export default function App() {
     'https://develop.watchbeem.com/profile_avatars/c5f9c093-3166-47e9-b83e-84f6d72c7151/avatar.jpg?1669199370556.498';
 
   const token1 =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQ2NDUwNzEiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDY0ODY3MSwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjMiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.CW2j62tz7d_83mAKVWEu6jO1Lyj4NxTYvLGBB7EMZg0';
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQ2Nzc2MDMiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDY4MTIwMywiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjEiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.tvq5tpKTiU9mfgDwkpFA2TV2rZgTLayjNGz6ulPaqts';
   const token2 =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQ2NDUwOTUiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDY0ODY5NSwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjQiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.eghVTbXKFi8xvjghUru5wK9QS52POohA4j-rttD9YiA';
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzQ2Nzc2MjMiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NDY4MTIyMywiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjIiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.o2Ni35IjqExEwSoPujw3vzuyIZ_FaUxqBUQ76IKYm6k';
   TwilioView.initialize();
   React.useEffect(() => {
     const subscriptions = [
@@ -263,7 +263,7 @@ export default function App() {
     <View style={styles.container}>
       <TwilioView
         src={{
-          token: Platform.OS === 'ios' ? token2 : token1,
+          token: token2,
           roomName: 'room1',
           imgUriPlaceHolder: imgUri,
           localTextPlaceHolder: 'No Preview',

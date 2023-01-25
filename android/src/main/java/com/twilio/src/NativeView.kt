@@ -140,11 +140,13 @@ class NativeView(
       audioSwitch.start { audioDevices, audioDevice -> }
     }
     //-------------------------------------------------
+
     localVideoTrack = if (localVideoTrack == null && checkPermissionForCameraAndMicrophone()) {
       createLocalVideoTrack(
         this.context,
         true,
-        cameraCapturerCompat
+        cameraCapturerCompat,
+        VideoFormat(VideoDimensions.HD_720P_VIDEO_DIMENSIONS, 30)
       )
     } else {
       localVideoTrack
@@ -687,7 +689,7 @@ class NativeView(
       remoteVideoTrackPublication: RemoteVideoTrackPublication,
       remoteVideoTrack: RemoteVideoTrack
     ) {
-      setPrimaryViewPlaceholder(false)
+    //  setPrimaryViewPlaceholder(false)
 
       Log.i(
         TAG, "onVideoTrackUnsubscribed: " +
@@ -820,7 +822,9 @@ class NativeView(
     localVideoTrack = createLocalVideoTrack(
       this.context,
       true,
-      cameraCapturerCompat
+      cameraCapturerCompat,
+      VideoFormat(VideoDimensions.HD_720P_VIDEO_DIMENSIONS, 30)
+
     )
   }
 
@@ -955,7 +959,7 @@ class NativeView(
       mThumbnailVideoView!!.visibility = VISIBLE
       mThumbnailPlaceHolderView!!.visibility = INVISIBLE
       mThumbnailPlaceHolderText!!.visibility = INVISIBLE
-
+      mThumbnailVideoView!!.elevation= 2F
     } else {
 
         if (this.mRemotePlacecHolderTextView != null) {
@@ -1023,9 +1027,6 @@ class NativeView(
         TAG, "moveLocalVideoToThumbnailView ==== 1"
       )
       mThumbnailVideoView!!.visibility = View.VISIBLE
-      mThumbnailVideoView!!.clipToOutline = true
-      mThumbnailVideoView!!.setBackgroundDrawable(shape);
-      mThumbnailVideoView!!.setBackground(shape);
       with(localVideoTrack) {
         this?.removeSink(mPrimaryVideoView!!)
         this?.addSink(mThumbnailVideoView!!)
