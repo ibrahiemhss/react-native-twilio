@@ -42,8 +42,14 @@ import kotlin.properties.Delegates
 
 
 @SuppressLint("MissingInflatedId")
-class NativeView(context: Context, reactApplicationContext: ReactApplicationContext, isFromReact: Boolean, activity: Activity, permissionAwareActivity:PermissionAwareActivity) :
-  RelativeLayout(context) , PermissionListener, LifecycleOwner {
+class NativeView(
+  context: Context,
+  reactApplicationContext: ReactApplicationContext,
+  isFromReact: Boolean,
+  activity: Activity,
+  permissionAwareActivity: PermissionAwareActivity
+) :
+  RelativeLayout(context), PermissionListener, LifecycleOwner {
 
   private lateinit var lifecycleRegistry: LifecycleRegistry
 
@@ -53,8 +59,9 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
   private val MIC_PERMISSION_INDEX = 1
   private lateinit var accessToken: String
   val shape = GradientDrawable()
-  private  var imageUrlPlaceholder: String?=null
-  private  var textPlaceholder: String?=null
+  private var localTextPlaceholder: String? = null
+  private var imageUrlPlaceholder: String? = null
+  private var textPlaceholder: String? = null
   public var myRoom: Room? = null
   public var myActivity: Activity? = null
   public var myPermissionAwareActivity: PermissionAwareActivity? = null
@@ -71,12 +78,13 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
   private var mReconnectingProgressBar: ProgressBar? = null
   private var mLocalVideoActionFab: FloatingActionButton? = null
   private var mThumbnailVideoView: VideoView? = null
-  private var mThumbnailView: RoundedCornerLayout? = null
   private var mPrimaryVideoView: VideoView? = null
   private var mReactApplicationContext: ReactApplicationContext? = null
-  private var placeHolderImageView: ImageView? = null
-  private var placeHolderView: LinearLayout? = null
-  private var placecHolderTextView: AppCompatTextView? = null
+  private var mThumbnailPlaceHolderView: LinearLayout? = null
+  private var mPrimaryPlaceHolderImageView: ImageView? = null
+  private var mPlaceHolderView: LinearLayout? = null
+  private var mRemotePlacecHolderTextView: AppCompatTextView? = null
+  private var mThumbnailPlaceHolderText: AppCompatTextView? = null
 
   val cameraCapturerCompat by lazy {
     CameraCapturerCompat(this.context, CameraCapturerCompat.Source.FRONT_CAMERA)
@@ -100,28 +108,22 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     mReconnectingProgressBar =
       mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
     mThumbnailVideoView = mainView!!.findViewById<View>(R.id.thumbnailVideoView) as VideoView?
-    mThumbnailView = mainView!!.findViewById<View>(R.id.thumbnailVideo) as RoundedCornerLayout?
     mPrimaryVideoView = mainView!!.findViewById<View>(R.id.primaryVideoView) as VideoView?
-    placeHolderImageView = mainView!!.findViewById<View>(R.id.placeHolderImageView) as ImageView?
-    placeHolderView = mainView!!.findViewById<View>(R.id.placeHolderView) as LinearLayout?
-    placecHolderTextView = mainView!!.findViewById<View>(R.id.placecHolderTextView) as AppCompatTextView?
-
-
-    shape.shape = GradientDrawable.RECTANGLE
-    shape.setColor(Color.WHITE)
-    shape.setStroke(3, Color.WHITE)
-    shape.setCornerRadius(20F);
-    mThumbnailVideoView!!.setBackgroundDrawable(shape);
-    mThumbnailVideoView!!.setBackground(shape);
-
-    mThumbnailVideoView!!.clipToOutline = true
+    mPrimaryPlaceHolderImageView =
+      mainView!!.findViewById<View>(R.id.remotePlaceHolderImageView) as ImageView?
+    mThumbnailPlaceHolderView =
+      mainView!!.findViewById<View>(R.id.thumbnailPlaceHolderView) as LinearLayout?
+    mPlaceHolderView = mainView!!.findViewById<View>(R.id.placeHolderView) as LinearLayout?
+    mRemotePlacecHolderTextView =
+      mainView!!.findViewById<View>(R.id.remotePlacecHolderTextView) as AppCompatTextView?
+    mThumbnailPlaceHolderText =
+      mainView!!.findViewById<View>(R.id.thumbnailPlaceHolderText) as AppCompatTextView?
     mThumbnailVideoView!!.visibility = INVISIBLE
-    mThumbnailView!!.visibility = INVISIBLE
-
-    placeHolderImageView!!.visibility = INVISIBLE
-    placeHolderView!!.visibility = INVISIBLE
-    placecHolderTextView!!.visibility = INVISIBLE
-
+    mPrimaryPlaceHolderImageView!!.visibility = INVISIBLE
+    mPlaceHolderView!!.visibility = INVISIBLE
+    mRemotePlacecHolderTextView!!.visibility = INVISIBLE
+    mThumbnailPlaceHolderView!!.visibility = INVISIBLE
+    mThumbnailPlaceHolderText!!.visibility = INVISIBLE
     //-------------------------------------------------
 
     myActivity = activity
@@ -841,6 +843,9 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     if (src.hasKey("textPlaceHolder")) {
       this.textPlaceholder = src.getString("textPlaceHolder")!!
     }
+    if (src.hasKey("localTextPlaceHolder")) {
+      this.localTextPlaceholder = src.getString("localTextPlaceHolder")!!
+    }
     if (this.accessToken == null) return
     if (this.accessToken.isEmpty()) return
     try {
@@ -913,35 +918,59 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     }
   }
 
-  fun setPrimaryViewPlaceholder(isVideoAvailable:Boolean) {
-    if(isVideoAvailable){
-      mPrimaryVideoView!!.visibility= VISIBLE
-      placecHolderTextView!!.visibility= INVISIBLE
-      placeHolderImageView!!.visibility= INVISIBLE
-      placeHolderView!!.visibility= INVISIBLE
+  fun setPrimaryViewPlaceholder(isVideoAvailable: Boolean) {
+    if (isVideoAvailable) {
+      mPrimaryVideoView!!.visibility = VISIBLE
+      mRemotePlacecHolderTextView!!.visibility = INVISIBLE
+      mPrimaryPlaceHolderImageView!!.visibility = INVISIBLE
+      mPlaceHolderView!!.visibility = INVISIBLE
 
-    }else{
-      if(this.imageUrlPlaceholder != null){
+    } else {
+      if (this.imageUrlPlaceholder != null) {
         Glide.with(context)
           .load(this.imageUrlPlaceholder)
-          .into(placeHolderImageView!!)
-        placeHolderImageView!!.visibility= VISIBLE
-        mPrimaryVideoView!!.visibility= INVISIBLE
+          .into(mPrimaryPlaceHolderImageView!!)
+        mPrimaryPlaceHolderImageView!!.visibility = VISIBLE
+        mPrimaryVideoView!!.visibility = INVISIBLE
 
-      }else{
-        if (this.placecHolderTextView!=null) {
-          val temp = this.placecHolderTextView.toString()
-          this.placecHolderTextView!!.text=temp
-        }else{
-          val temp = "Got it!"
-          this.placecHolderTextView!!.text=temp
+      } else {
+        if (this.mRemotePlacecHolderTextView != null) {
+          val temp = this.textPlaceholder.toString()
+          this.mRemotePlacecHolderTextView!!.text = temp
+        } else {
+          val temp = "Camera Client closed"
+          this.mRemotePlacecHolderTextView!!.text = temp
 
         }
-        placeHolderView!!.visibility= VISIBLE
-        placecHolderTextView!!.visibility= VISIBLE
-        mPrimaryVideoView!!.visibility= INVISIBLE
+        mPlaceHolderView!!.visibility = VISIBLE
+        mRemotePlacecHolderTextView!!.visibility = VISIBLE
+        mPrimaryVideoView!!.visibility = INVISIBLE
       }
     }
+  }
+
+
+  fun setThumbnailViewPlaceholder(isVideoAvailable: Boolean) {
+    if (isVideoAvailable) {
+      mThumbnailVideoView!!.visibility = VISIBLE
+      mThumbnailPlaceHolderView!!.visibility = INVISIBLE
+      mThumbnailPlaceHolderText!!.visibility = INVISIBLE
+
+    } else {
+
+        if (this.mRemotePlacecHolderTextView != null) {
+          val temp = this.localTextPlaceholder.toString()
+          this.mRemotePlacecHolderTextView!!.text = temp
+        } else {
+          val temp = "CAMERA CLOSED"
+          this.mThumbnailPlaceHolderText!!.text = temp
+
+        }
+      mThumbnailPlaceHolderView!!.visibility = VISIBLE
+      mThumbnailPlaceHolderText!!.visibility = VISIBLE
+        mThumbnailVideoView!!.visibility = INVISIBLE
+      }
+
   }
 
   /*
@@ -994,7 +1023,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
         TAG, "moveLocalVideoToThumbnailView ==== 1"
       )
       mThumbnailVideoView!!.visibility = View.VISIBLE
-      mThumbnailView!!.visibility = View.VISIBLE
       mThumbnailVideoView!!.clipToOutline = true
       mThumbnailVideoView!!.setBackgroundDrawable(shape);
       mThumbnailVideoView!!.setBackground(shape);
@@ -1037,7 +1065,6 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     )
     if (mThumbnailVideoView!!.visibility == View.VISIBLE) {
       mThumbnailVideoView!!.visibility = View.INVISIBLE
-      mThumbnailView!!.visibility = View.INVISIBLE
       with(localVideoTrack) {
         this?.removeSink(mThumbnailVideoView!!)
         this?.addSink(mPrimaryVideoView!!)
@@ -1077,7 +1104,8 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       sendEvent(mReactApplicationContext!!, Constants.ON_VIDEO_ENABLED, event)
     }
   }
-  public fun enableVideo(){
+
+  public fun enableVideo() {
     Log.d(TAG, "========= disconnect ======= ")
     localVideoTrack?.let {
       val enable = !it.isEnabled
@@ -1085,20 +1113,20 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       val event: WritableMap = WritableNativeMap()
       event.putString(Constants.ON_VIDEO_ENABLED, enable.toString())
       sendEvent(mReactApplicationContext!!, Constants.ON_VIDEO_ENABLED, event)
-
+      setThumbnailViewPlaceholder(enable)
     }
   }
 
-  public fun mute(){
+  public fun mute() {
     Log.d(TAG, "========= mute ======= ")
     localAudioTrack?.let {
-        val enable = !it.isEnabled
-        it.enable(enable)
+      val enable = !it.isEnabled
+      it.enable(enable)
       val event: WritableMap = WritableNativeMap()
       event.putBoolean(Constants.ON_MUTE, enable)
       sendEvent(mReactApplicationContext!!, Constants.ON_RE_CONNECTED, event)
 
-      }
+    }
   }
 
   override fun getLifecycle(): Lifecycle {
@@ -1106,6 +1134,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     return lifecycleRegistry
 
   }
+
   override fun onStartTemporaryDetach() {
     super.onStartTemporaryDetach()
 
@@ -1145,6 +1174,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     Log.d(TAG, "onSaveInstanceState")
     return super.onSaveInstanceState()
   }
+
   fun onPause(owner: LifecycleOwner) {
     localVideoTrack?.let { myLocalParticipant?.unpublishTrack(it) }
     localVideoTrack?.release()
@@ -1159,6 +1189,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
     localAudioTrack?.release()
     localVideoTrack?.release()
   }
+
   override fun onRequestPermissionsResult(
     requestCode: Int,
     permissions: Array<out String>?,
@@ -1184,7 +1215,7 @@ class NativeView(context: Context, reactApplicationContext: ReactApplicationCont
       if (cameraAndMicPermissionGranted) {
         createAudioAndVideoTracks()
         // TODO ===== SEND EVENT ============= updateAudio
-        audioSwitch.start { audioDevices, audioDevice ->  }
+        audioSwitch.start { audioDevices, audioDevice -> }
 
       } else {
         Toast.makeText(

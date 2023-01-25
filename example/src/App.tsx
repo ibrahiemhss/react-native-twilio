@@ -265,7 +265,8 @@ export default function App() {
         src={{
           token: Platform.OS === 'ios' ? token2 : token1,
           roomName: 'room1',
-          //imgUriPlaceHolder: imgUri,
+          localTextPlaceHolder: 'No Preview',
+          imgUriPlaceHolder: imgUri,
           textPlaceHolder: 'No Preview',
         }}
         //trackSid={null}
