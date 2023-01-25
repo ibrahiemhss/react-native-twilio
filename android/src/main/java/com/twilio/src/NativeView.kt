@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.media.AudioManager
 import android.os.Build
@@ -31,6 +30,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.twilio.R
 import com.twilio.audioswitch.AudioDevice.*
 import com.twilio.audioswitch.AudioSwitch
+import com.twilio.src.utils.isH264Supported
 import com.twilio.video.*
 import com.twilio.video.VideoView
 import com.twilio.video.ktx.Video.connect
@@ -146,7 +146,7 @@ class NativeView(
         this.context,
         true,
         cameraCapturerCompat,
-        VideoFormat(VideoDimensions.HD_720P_VIDEO_DIMENSIONS, 30)
+        buildVideoFormat()
       )
     } else {
       localVideoTrack
@@ -161,7 +161,6 @@ class NativeView(
         View.VISIBLE
     }
   }
-
   /*
    * AudioCodec and VideoCodec represent the preferred codec for encoding and decoding audio and
    * video.
@@ -185,17 +184,17 @@ class NativeView(
     }
   private val videoCodec: VideoCodec
     get() {
-      val videoCodecName = Vp8Codec.NAME
-      return when (videoCodecName) {
-        Vp8Codec.NAME -> {
-          Vp8Codec(false)
-        }
-        H264Codec.NAME -> H264Codec()
-        Vp9Codec.NAME -> Vp9Codec()
-        else -> Vp8Codec()
+      if(isH264Supported()){
+        return  H264Codec()
+      }else{
+        return Vp8Codec()
       }
     }
 
+  // ===== SETUP =================================================================================
+  private fun buildVideoFormat(): VideoFormat {
+    return VideoFormat(VideoDimensions.HD_720P_VIDEO_DIMENSIONS, 24)
+  }
   private val enableAutomaticSubscription: Boolean
     get() {
       return true
@@ -221,7 +220,7 @@ class NativeView(
          ) ?: defaultMaxVideoBitrate
        )*/
 
-      return EncodingParameters(2, 4)
+      return EncodingParameters(10000, 16000)
     }
 
   /*
@@ -823,7 +822,7 @@ class NativeView(
       this.context,
       true,
       cameraCapturerCompat,
-      VideoFormat(VideoDimensions.HD_720P_VIDEO_DIMENSIONS, 30)
+      buildVideoFormat()
 
     )
   }
@@ -860,6 +859,7 @@ class NativeView(
       )
 
       myRoom = connect(this.context, accessToken, roomListener) {
+
         roomName(src.getString("roomName")!!)
         /*
          * Add local audio track to connect options to share with participants.
@@ -873,7 +873,7 @@ class NativeView(
         /*
          * Set the preferred audio and video codec for media.
          */
-        preferAudioCodecs(listOf(audioCodec))
+        preferAudioCodecs(listOf(G722Codec(),))
         preferVideoCodecs(listOf(videoCodec))
 
         /*
