@@ -42,7 +42,7 @@ class TwilioViewController: UIViewController {
         self.previewView.frame = rect
         self.previewView.contentMode = .scaleAspectFill;
         self.view.addSubview(self.previewView)
-
+        
         let dic = NSDictionary(dictionary:data)
         self.startPreview()
         guard let _token = dic.object(forKey: "token") as? String else {
@@ -94,12 +94,12 @@ class TwilioViewController: UIViewController {
         
         TwilioViewController.localVideoTrack!.isEnabled = !TwilioViewController.localVideoTrack!.isEnabled;
         if(TwilioViewController.localVideoTrack!.isEnabled){
-        
+            
             TwilioViewController.localPlaceHolderContainer?.isHidden=true
             self.previewView.isHidden=false
             
         }else{
-           // self.previewView.removeFromSuperview()
+            // self.previewView.removeFromSuperview()
             TwilioViewController.localPlaceHolderContainer?.isHidden=false
             self.previewView.isHidden=true
             
@@ -137,6 +137,7 @@ class TwilioViewController: UIViewController {
     
     // ------------------------------------------------------------------------------------------------------
     override func viewDidLoad() {
+        self.view.backgroundColor=UIColor.white
         if(TwilioViewController.camera == nil){
             self.startPreview()
         }
@@ -182,9 +183,9 @@ class TwilioViewController: UIViewController {
         TwilioViewController.placeHolderLabel.center=TwilioViewController.placeHolderContainer!.center
         
         TwilioViewController.placeHolderContainer!.backgroundColor = UIColor.gray
-         TwilioViewController.placeHolderContainer!.addSubview(TwilioViewController.placeHolderLabel)
+        TwilioViewController.placeHolderContainer!.addSubview(TwilioViewController.placeHolderLabel)
         TwilioViewController.placeHolderContainer!.tag = 200
-
+        
         TwilioViewController.placeHolderContainer!.sendSubviewToBack(self.previewView)
         TwilioViewController.placeHolderContainer?.frame = TwilioViewController.viewRect
         TwilioViewController.placeHolderLabel = UILabel(frame: CGRectMake(0, 0,  TwilioViewController.viewRect.size.width, CGFloat.greatestFiniteMagnitude))
@@ -194,23 +195,21 @@ class TwilioViewController: UIViewController {
         TwilioViewController.localPlaceHolderContainer?.frame =
         CGRect(x: self.view.frame.width/3.5, y:self.view.frame.height/25, width: self.view.frame.height/11, height: self.view.frame.height/10)
         
-        TwilioViewController.localPlaceHolderLabel.numberOfLines = 0
-        TwilioViewController.localPlaceHolderLabel.lineBreakMode = NSLineBreakMode.byWordWrapping
-        TwilioViewController.localPlaceHolderContainer!.backgroundColor = UIColor.gray
+        TwilioViewController.localPlaceHolderContainer!.backgroundColor = UIColor.white
         
-        // TOD WANT FIX
-        TwilioViewController.localPlaceHolderLabel = UILabel(frame: CGRectMake(self.view.frame.width/3.5, self.view.frame.height/25, self.view.frame.height/12, self.view.frame.height/16))
-       // TwilioViewController.localPlaceHolderLabel.bounds = (TwilioViewController.localPlaceHolderContainer?.frame.insetBy(dx: 16.0, dy: 16.0))!;
-        
-        TwilioViewController.localPlaceHolderLabel.text = "test"
-        TwilioViewController.localPlaceHolderLabel.sizeToFit()
-        TwilioViewController.localPlaceHolderLabel.center=TwilioViewController.localPlaceHolderContainer!.center
-        
-        TwilioViewController.localPlaceHolderContainer!.addSubview( TwilioViewController.localPlaceHolderLabel)
         TwilioViewController.localPlaceHolderContainer!.tag = 300
         TwilioViewController.localPlaceHolderContainer!.layer.cornerRadius = 15.0
         self.view.addSubview(TwilioViewController.localPlaceHolderContainer!)
-
+        TwilioViewController.localPlaceHolderLabel.translatesAutoresizingMaskIntoConstraints = false
+        TwilioViewController.localPlaceHolderLabel.text = TwilioViewController.localTextPlaceHolder
+        TwilioViewController.localPlaceHolderLabel.textColor = UIColor.black
+        TwilioViewController.localPlaceHolderLabel.textAlignment = .center
+        TwilioViewController.localPlaceHolderLabel.numberOfLines = 0
+        TwilioViewController.localPlaceHolderContainer!.addSubview(TwilioViewController.localPlaceHolderLabel)
+        TwilioViewController.localPlaceHolderLabel.centerXAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerXAnchor).isActive = true
+        TwilioViewController.localPlaceHolderLabel.centerYAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerYAnchor).isActive = true
+        TwilioViewController.localPlaceHolderLabel.center=TwilioViewController.localPlaceHolderContainer!.center
+        
         
         //   local main breview===============================================================================
         self.previewView.frame =
@@ -223,6 +222,7 @@ class TwilioViewController: UIViewController {
         TwilioViewController.localPlaceHolderContainer!.isHidden=true
     }
     
+
     // ------------------------------------------------------------------------------------------------------
     func isVisible(view: UIView) -> Bool {
         func isVisible(view: UIView, inView: UIView?) -> Bool {
@@ -244,60 +244,11 @@ class TwilioViewController: UIViewController {
         self.view.insertSubview(self.previewView, at: 0)
         self.previewView.frame = self.view.bounds
         self.previewView.contentMode = .scaleAspectFill;
+        TwilioViewController.localPlaceHolderContainer!.frame=TwilioViewController.viewRect
         self.startPreview()
         
     }
     
-    // ------------------------------------------------------------------------------------------------------
-    func replaceRemote2(isImage:Bool){
-        self.remoteView?.isHidden=true
-        if(isImage){
-            TwilioViewController.imageViewPlaceHolder.isHidden=false
-            TwilioViewController.placeHolderContainer?.isHidden=true
-            let image = UIImage(named: "default")
-            TwilioViewController.imageViewPlaceHolder.image = image
-            TwilioViewController.imageViewPlaceHolder.frame=CGRectMake(0, 0, TwilioViewController.viewRect.width/1.2, TwilioViewController.viewRect.height/1.2)
-            TwilioViewController.imageViewPlaceHolder.sendSubviewToBack(self.previewView)
-            TwilioViewController.imageViewPlaceHolder.load(url: URL(string:TwilioViewController.imgUriPlaceHolder! )!)
-            
-        }else{
-            TwilioViewController.placeHolderContainer?.isHidden=false
-            TwilioViewController.imageViewPlaceHolder.isHidden=true
-            
-            TwilioViewController.placeHolderContainer?.frame = TwilioViewController.viewRect
-            self.view.insertSubview(TwilioViewController.imageViewPlaceHolder, at: 0)
-            
-            TwilioViewController.placeHolderLabel = UILabel(frame: CGRectMake(0, 0,  TwilioViewController.viewRect.size.width, CGFloat.greatestFiniteMagnitude))
-            
-            
-            TwilioViewController.placeHolderLabel.numberOfLines = 0
-            TwilioViewController.placeHolderLabel.lineBreakMode = NSLineBreakMode.byWordWrapping
-            //label.font = font
-            TwilioViewController.placeHolderLabel.text = TwilioViewController.textPlaceHolder
-            TwilioViewController.placeHolderLabel.sizeToFit()
-            TwilioViewController.placeHolderLabel.center=TwilioViewController.placeHolderContainer!.center
-            TwilioViewController.placeHolderContainer!.backgroundColor = UIColor.gray
-            // TwilioViewController.placeHolderContainer!.insertSubview(TwilioViewController.placeHolderLabel, at: 0)
-            TwilioViewController.placeHolderContainer!.tag = 200
-            self.view.insertSubview(TwilioViewController.placeHolderContainer!, at: 0)
-            // self.placeHolderContainer!.frame = self.view.bounds
-            TwilioViewController.placeHolderContainer!.sendSubviewToBack(self.previewView)
-            
-        }
-        
-    }
-    
-    // ------------------------------------------------------------------------------------------------------
-    func replaceRLocal3(){
-        self.previewView.isHidden=true
-        
-        //TwilioViewController.localPlaceHolderContainer?.isHidden=false
-        
-        
-        self.view.addSubview(TwilioViewController.localPlaceHolderContainer!)
-        
-        
-    }
     // ------------------------------------------------------------------------------------------------------
     func connectToARoom() {
         

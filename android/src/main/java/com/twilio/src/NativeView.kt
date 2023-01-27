@@ -835,9 +835,9 @@ class NativeView(
 
   }
 
-  fun connectToRoom(src: ReadableMap) {
+  fun connectToRoom(src: ReadableMap?) {
     // setAccessTokenFromPref()
-    if (src.hasKey("token")) {
+    if (src!!.hasKey("token")) {
       this.accessToken = src.getString("token")!!
     }
     if (src.hasKey("imgUriPlaceHolder")) {
@@ -849,7 +849,6 @@ class NativeView(
     if (src.hasKey("localTextPlaceHolder")) {
       this.localTextPlaceholder = src.getString("localTextPlaceHolder")!!
     }
-    if (this.accessToken == null) return
     if (this.accessToken.isEmpty()) return
     try {
       audioSwitch.activate()
