@@ -22,6 +22,7 @@ class TwilioViewController: UIViewController {
     var previewView:VideoView = VideoView.init()
     static var viewRect = CGRectMake(0, 0, 48, 48)
     public static var accessToken : String?
+    public static var isLocal: Bool = true
     public static var isStopedCamera: Bool = false
     public static var imgUriPlaceHolder : String?
     public static var imageViewPlaceHolder:UIImageView = UIImageView.init()
@@ -42,9 +43,9 @@ class TwilioViewController: UIViewController {
         self.previewView.frame = rect
         self.previewView.contentMode = .scaleAspectFill;
         self.view.addSubview(self.previewView)
-        
+        self.view.addSubview(TwilioViewController.localPlaceHolderContainer!)
+
         let dic = NSDictionary(dictionary:data)
-        self.startPreview()
         guard let _token = dic.object(forKey: "token") as? String else {
             return
         }
@@ -93,18 +94,8 @@ class TwilioViewController: UIViewController {
     func closeCamera() {
         
         TwilioViewController.localVideoTrack!.isEnabled = !TwilioViewController.localVideoTrack!.isEnabled;
-        if(TwilioViewController.localVideoTrack!.isEnabled){
-            
-            TwilioViewController.localPlaceHolderContainer?.isHidden=true
-            self.previewView.isHidden=false
-            
-        }else{
-            // self.previewView.removeFromSuperview()
-            TwilioViewController.localPlaceHolderContainer?.isHidden=false
-            self.previewView.isHidden=true
-            
-            
-        }
+        self.setupRemoteVideoView()
+
         print (" ==== closeCamera")
     }
     
@@ -115,8 +106,8 @@ class TwilioViewController: UIViewController {
             TwilioViewController.room!.disconnect()
             print (" ==== endCall")
             TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.END_CALL, body: [TwilioEmitter.END_CALL:TwilioEmitter.END_CALL]);
-            
-            moveToLocaleVideoView()
+            TwilioViewController.isLocal=true
+            self.setupRemoteVideoView()
         }
     }
     
@@ -152,74 +143,130 @@ class TwilioViewController: UIViewController {
     
     // ------------------------------------------------------------------------------------------------------
     func setupRemoteVideoView() {
+   
+        if(TwilioViewController.isLocal){
+            if(self.remoteView !== nil){
+                if(isVisible(view: self.remoteView!)){
+                    self.remoteView?.isHidden=true
+                    self.remoteView!.removeFromSuperview()
+
+                }
+            }
+            
+
+            TwilioViewController.localPlaceHolderContainer?.frame = TwilioViewController.viewRect
+            
+            TwilioViewController.localPlaceHolderContainer!.backgroundColor = UIColor.white
+            
+            TwilioViewController.localPlaceHolderContainer!.tag = 300
+            TwilioViewController.localPlaceHolderContainer!.layer.cornerRadius = 15.0
+           // self.view.addSubview(TwilioViewController.localPlaceHolderContainer!)
+            TwilioViewController.localPlaceHolderLabel.translatesAutoresizingMaskIntoConstraints = false
+            TwilioViewController.localPlaceHolderLabel.text = TwilioViewController.localTextPlaceHolder
+            TwilioViewController.localPlaceHolderLabel.textColor = UIColor.black
+            TwilioViewController.localPlaceHolderLabel.textAlignment = .center
+            TwilioViewController.localPlaceHolderLabel.numberOfLines = 0
+            TwilioViewController.localPlaceHolderContainer!.addSubview(TwilioViewController.localPlaceHolderLabel)
+            TwilioViewController.localPlaceHolderLabel.centerXAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerXAnchor).isActive = true
+            TwilioViewController.localPlaceHolderLabel.centerYAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerYAnchor).isActive = true
+            TwilioViewController.localPlaceHolderLabel.center=TwilioViewController.localPlaceHolderContainer!.center
+            
+            //self.view.addSubview(self.previewView)
+            self.previewView.frame =
+            CGRect(x: 0, y:0, width: self.view.frame.height, height: self.view.frame.height)
+            self.previewView.layer.cornerRadius = 15.0
+            TwilioViewController.placeHolderContainer?.isHidden=true
+            TwilioViewController.imageViewPlaceHolder.isHidden=true
+            if(TwilioViewController.localVideoTrack!.isEnabled){
+                self.previewView.isHidden=false
+                TwilioViewController.localPlaceHolderContainer?.isHidden=true
+
+            }else{
+
+                TwilioViewController.localPlaceHolderContainer?.isHidden=false
+                self.previewView.isHidden=true
+            
+            }
+            
+        }else{
+            
+            if(self.remoteView !== nil){
+                if(isVisible(view: self.remoteView!)){
+                    self.remoteView?.isHidden=false
+                    self.remoteView!.removeFromSuperview()
+
+                }
+            }
+
         
-        self.remoteView = VideoView(frame: CGRect.zero)
-        self.remoteView!.tag = 100
-        self.remoteView!.contentMode = .scaleAspectFill;
+            self.remoteView = VideoView(frame: CGRect.zero)
+            self.remoteView!.tag = 100
+            self.remoteView!.contentMode = .scaleAspectFill;
+            
+            self.remoteView!.frame = TwilioViewController.viewRect
+            // self.remoteView!.center = CGPoint(x: TwilioViewController.viewRect.size.width  / 2,
+            //    y: TwilioViewController.viewRect.size.height / 2)
+            self.view.insertSubview(self.remoteView!, at: 0)
+            
+            self.remoteView?.sendSubviewToBack(self.previewView)
+            
+            //IMAGE remote placholders
+            let image = UIImage(named: "default")
+            TwilioViewController.imageViewPlaceHolder.image = image
+            TwilioViewController.imageViewPlaceHolder.frame=TwilioViewController.viewRect
+            TwilioViewController.imageViewPlaceHolder.contentMode = .scaleAspectFit;
+            
+            TwilioViewController.imageViewPlaceHolder.bounds = TwilioViewController.viewRect.insetBy(dx: 16.0, dy: 16.0);
+            
+            
+            //TEXT remote placeholder ===============================================================================
+            TwilioViewController.placeHolderLabel.numberOfLines = 0
+            TwilioViewController.placeHolderLabel.lineBreakMode = NSLineBreakMode.byWordWrapping
+            
+            //label.font = font
+            TwilioViewController.placeHolderLabel.text = TwilioViewController.textPlaceHolder
+            TwilioViewController.placeHolderLabel.sizeToFit()
+            TwilioViewController.placeHolderLabel.center=TwilioViewController.placeHolderContainer!.center
+            
+            TwilioViewController.placeHolderContainer!.backgroundColor = UIColor.gray
+            TwilioViewController.placeHolderContainer!.addSubview(TwilioViewController.placeHolderLabel)
+            TwilioViewController.placeHolderContainer!.tag = 200
+            
+            TwilioViewController.placeHolderContainer!.sendSubviewToBack(self.previewView)
+            TwilioViewController.placeHolderContainer?.frame = TwilioViewController.viewRect
+            TwilioViewController.placeHolderLabel = UILabel(frame: CGRectMake(0, 0,  TwilioViewController.viewRect.size.width, CGFloat.greatestFiniteMagnitude))
+            
+            
+            //   local placeholders===============================================================================
+            TwilioViewController.localPlaceHolderContainer?.frame =
+            CGRect(x: self.view.frame.width/3.5, y:self.view.frame.height/25, width: self.view.frame.height/11, height: self.view.frame.height/10)
+            
+            TwilioViewController.localPlaceHolderContainer!.backgroundColor = UIColor.white
+            
+            TwilioViewController.localPlaceHolderContainer!.tag = 300
+            TwilioViewController.localPlaceHolderContainer!.layer.cornerRadius = 15.0
+            TwilioViewController.localPlaceHolderLabel.translatesAutoresizingMaskIntoConstraints = false
+            TwilioViewController.localPlaceHolderLabel.text = TwilioViewController.localTextPlaceHolder
+            TwilioViewController.localPlaceHolderLabel.textColor = UIColor.black
+            TwilioViewController.localPlaceHolderLabel.textAlignment = .center
+            TwilioViewController.localPlaceHolderLabel.numberOfLines = 0
+            TwilioViewController.localPlaceHolderContainer!.addSubview(TwilioViewController.localPlaceHolderLabel)
+            TwilioViewController.localPlaceHolderLabel.centerXAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerXAnchor).isActive = true
+            TwilioViewController.localPlaceHolderLabel.centerYAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerYAnchor).isActive = true
+            TwilioViewController.localPlaceHolderLabel.center=TwilioViewController.localPlaceHolderContainer!.center
+            
+            
+            //   local main breview===============================================================================
+            self.previewView.frame =
+            CGRect(x: self.view.frame.width/3.5, y:self.view.frame.height/25, width: self.view.frame.height/11, height: self.view.frame.height/10)
+            self.previewView.layer.cornerRadius = 15.0
+            self.previewView.isHidden=false
+            self.remoteView!.isHidden=false
+            TwilioViewController.placeHolderContainer?.isHidden=true
+            TwilioViewController.imageViewPlaceHolder.isHidden=true
+            TwilioViewController.localPlaceHolderContainer!.isHidden=true
+        }
         
-        self.remoteView!.frame = TwilioViewController.viewRect
-        // self.remoteView!.center = CGPoint(x: TwilioViewController.viewRect.size.width  / 2,
-        //    y: TwilioViewController.viewRect.size.height / 2)
-        self.view.insertSubview(self.remoteView!, at: 0)
-        
-        self.remoteView?.sendSubviewToBack(self.previewView)
-        
-        //IMAGE remote placholders
-        let image = UIImage(named: "default")
-        TwilioViewController.imageViewPlaceHolder.image = image
-        TwilioViewController.imageViewPlaceHolder.frame=TwilioViewController.viewRect
-        TwilioViewController.imageViewPlaceHolder.contentMode = .scaleAspectFit;
-        
-        TwilioViewController.imageViewPlaceHolder.bounds = TwilioViewController.viewRect.insetBy(dx: 16.0, dy: 16.0);
-        
-        
-        //TEXT remote placeholder ===============================================================================
-        TwilioViewController.placeHolderLabel.numberOfLines = 0
-        TwilioViewController.placeHolderLabel.lineBreakMode = NSLineBreakMode.byWordWrapping
-        
-        //label.font = font
-        TwilioViewController.placeHolderLabel.text = TwilioViewController.textPlaceHolder
-        TwilioViewController.placeHolderLabel.sizeToFit()
-        TwilioViewController.placeHolderLabel.center=TwilioViewController.placeHolderContainer!.center
-        
-        TwilioViewController.placeHolderContainer!.backgroundColor = UIColor.gray
-        TwilioViewController.placeHolderContainer!.addSubview(TwilioViewController.placeHolderLabel)
-        TwilioViewController.placeHolderContainer!.tag = 200
-        
-        TwilioViewController.placeHolderContainer!.sendSubviewToBack(self.previewView)
-        TwilioViewController.placeHolderContainer?.frame = TwilioViewController.viewRect
-        TwilioViewController.placeHolderLabel = UILabel(frame: CGRectMake(0, 0,  TwilioViewController.viewRect.size.width, CGFloat.greatestFiniteMagnitude))
-        
-        
-        //   local placeholders===============================================================================
-        TwilioViewController.localPlaceHolderContainer?.frame =
-        CGRect(x: self.view.frame.width/3.5, y:self.view.frame.height/25, width: self.view.frame.height/11, height: self.view.frame.height/10)
-        
-        TwilioViewController.localPlaceHolderContainer!.backgroundColor = UIColor.white
-        
-        TwilioViewController.localPlaceHolderContainer!.tag = 300
-        TwilioViewController.localPlaceHolderContainer!.layer.cornerRadius = 15.0
-        self.view.addSubview(TwilioViewController.localPlaceHolderContainer!)
-        TwilioViewController.localPlaceHolderLabel.translatesAutoresizingMaskIntoConstraints = false
-        TwilioViewController.localPlaceHolderLabel.text = TwilioViewController.localTextPlaceHolder
-        TwilioViewController.localPlaceHolderLabel.textColor = UIColor.black
-        TwilioViewController.localPlaceHolderLabel.textAlignment = .center
-        TwilioViewController.localPlaceHolderLabel.numberOfLines = 0
-        TwilioViewController.localPlaceHolderContainer!.addSubview(TwilioViewController.localPlaceHolderLabel)
-        TwilioViewController.localPlaceHolderLabel.centerXAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerXAnchor).isActive = true
-        TwilioViewController.localPlaceHolderLabel.centerYAnchor.constraint(equalTo: TwilioViewController.localPlaceHolderContainer!.centerYAnchor).isActive = true
-        TwilioViewController.localPlaceHolderLabel.center=TwilioViewController.localPlaceHolderContainer!.center
-        
-        
-        //   local main breview===============================================================================
-        self.previewView.frame =
-        CGRect(x: self.view.frame.width/3.5, y:self.view.frame.height/25, width: self.view.frame.height/11, height: self.view.frame.height/10)
-        self.previewView.layer.cornerRadius = 15.0
-        self.previewView.isHidden=false
-        self.remoteView!.isHidden=false
-        TwilioViewController.placeHolderContainer?.isHidden=true
-        TwilioViewController.imageViewPlaceHolder.isHidden=true
-        TwilioViewController.localPlaceHolderContainer!.isHidden=true
     }
     
 
@@ -235,28 +282,18 @@ class TwilioViewController: UIViewController {
         }
         return isVisible(view: view, inView: view.superview)
     }
-    
-    // ------------------------------------------------------------------------------------------------------
-    func moveToLocaleVideoView() {
-        self.remoteView?.isHidden=true
-        self.previewView.removeFromSuperview()
-        self.previewView = VideoView(frame: CGRect.zero)
-        self.view.insertSubview(self.previewView, at: 0)
-        self.previewView.frame = self.view.bounds
-        self.previewView.contentMode = .scaleAspectFill;
-        TwilioViewController.localPlaceHolderContainer!.frame=TwilioViewController.viewRect
-        self.startPreview()
         
-    }
-    
     // ------------------------------------------------------------------------------------------------------
     func connectToARoom() {
         
         self.prepareLocalMedia()
+        
         let connectOptions = ConnectOptions(token: TwilioViewController.accessToken!) { (builder) in
             
             builder.audioTracks = TwilioViewController.localAudioTrack != nil ? [TwilioViewController.localAudioTrack!] : [LocalAudioTrack]()
             builder.videoTracks = TwilioViewController.localVideoTrack != nil ? [TwilioViewController.localVideoTrack!] : [LocalVideoTrack]()
+            builder.encodingParameters = EncodingParameters(audioBitrate:16, videoBitrate:0)
+
         }
         
         TwilioViewController.room = TwilioVideoSDK.connect(options: connectOptions, delegate: self)
@@ -301,13 +338,28 @@ class TwilioViewController: UIViewController {
                 self.previewView.addGestureRecognizer(tap)
             }
             
-            TwilioViewController.camera!.startCapture(device: frontCamera != nil ? frontCamera! : backCamera!) { (captureDevice, videoFormat, error) in
-                if let error = error {
-                    self.logMessage(messageText: "Capture failed with error.\ncode = \((error as NSError).code) error = \(error.localizedDescription)")
-                } else {
-                    self.previewView.shouldMirror = (captureDevice.position == .front)
-                }
-            }
+            
+            let format = VideoFormat()
+            format.dimensions = CMVideoDimensions(width:1920, height: 1080)
+            format.frameRate = 24
+            let supportedFormats = CameraSource.supportedFormats(captureDevice: backCamera!)
+                       // var formatFound: VideoFormat?
+                        for format in supportedFormats {
+                            if let formatCasted = format as? VideoFormat {
+                                if formatCasted.dimensions.height == 1080 && formatCasted.dimensions.width == 1920 {
+                                  //  formatFound = formatCasted
+                                    
+                                    TwilioViewController.camera!.startCapture(device: frontCamera != nil ? frontCamera! : backCamera!, format: formatCasted, completion: { (captureDevice, videoFormat, error) in
+                                        if let error = error {
+                                            self.logMessage(messageText: "Capture failed with error.\ncode = \((error as NSError).code) error = \(error.localizedDescription)")
+                                        } else {
+                                            self.previewView.shouldMirror = (captureDevice.position == .front)
+                                        }
+                                    });
+                                }
+                            }
+                        }
+          
         }
         else {
             self.logMessage(messageText:"No front or back capture device found!")
@@ -383,7 +435,8 @@ class TwilioViewController: UIViewController {
         for publication in videoPublications {
             if let subscribedVideoTrack = publication.remoteTrack,
                publication.isTrackSubscribed {
-                setupRemoteVideoView()
+                TwilioViewController.isLocal=false
+                self.setupRemoteVideoView()
                 subscribedVideoTrack.addRenderer(self.remoteView!)
                 TwilioViewController.remoteParticipant = participant
                 return true
@@ -486,7 +539,8 @@ extension TwilioViewController : RoomDelegate {
         
         self.cleanupRemoteParticipant()
         TwilioViewController.room = nil
-        self.moveToLocaleVideoView()
+        TwilioViewController.isLocal=true
+        self.setupRemoteVideoView()
     }
     
     func roomDidFailToConnect(room: Room, error: Error) {
@@ -540,8 +594,9 @@ extension TwilioViewController : RoomDelegate {
          TwilioEmitter.PARTICIPANT_SID:participant.sid as Any,
         ] as [String : Any]
         TwilioEmitter.emitter.sendEvent(withName: TwilioEmitter.ON_PARTICIPANT_DISCONNECTED, body:params);
-        
-        self.moveToLocaleVideoView()
+        TwilioViewController.isLocal=true
+        self.setupRemoteVideoView()
+
     }
 }
 
