@@ -172,8 +172,7 @@ class TwilioViewController: UIViewController {
             TwilioViewController.localPlaceHolderLabel.center=TwilioViewController.localPlaceHolderContainer!.center
             
             //self.view.addSubview(self.previewView)
-            self.previewView.frame =
-            CGRect(x: 0, y:0, width: self.view.frame.height, height: self.view.frame.height)
+            self.previewView.frame = TwilioViewController.viewRect
             self.previewView.layer.cornerRadius = 15.0
             TwilioViewController.placeHolderContainer?.isHidden=true
             TwilioViewController.imageViewPlaceHolder.isHidden=true
@@ -293,7 +292,7 @@ class TwilioViewController: UIViewController {
             builder.audioTracks = TwilioViewController.localAudioTrack != nil ? [TwilioViewController.localAudioTrack!] : [LocalAudioTrack]()
             builder.videoTracks = TwilioViewController.localVideoTrack != nil ? [TwilioViewController.localVideoTrack!] : [LocalVideoTrack]()
             builder.encodingParameters = EncodingParameters(audioBitrate:16, videoBitrate:0)
-
+           
         }
         
         TwilioViewController.room = TwilioVideoSDK.connect(options: connectOptions, delegate: self)
