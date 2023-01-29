@@ -17,6 +17,7 @@ class TwilioViewController: UIViewController {
     
     //
     var remoteView: VideoView?
+    var audioDevice = DefaultAudioDevice.init()
     
     public static var textLabel = UILabel(frame: CGRect.zero)
     var previewView:VideoView = VideoView.init()
@@ -143,7 +144,8 @@ class TwilioViewController: UIViewController {
     
     // ------------------------------------------------------------------------------------------------------
     func setupRemoteVideoView() {
-   
+
+        
         if(TwilioViewController.isLocal){
             if(self.remoteView !== nil){
                 if(isVisible(view: self.remoteView!)){
@@ -286,18 +288,46 @@ class TwilioViewController: UIViewController {
     func connectToARoom() {
         
         self.prepareLocalMedia()
-        
         let connectOptions = ConnectOptions(token: TwilioViewController.accessToken!) { (builder) in
+            //builder.videoEncodingMode = .auto
+
+            builder.preferredAudioCodecs = [OpusCodec()]
+            builder.preferredVideoCodecs =  [Vp8Codec()]
             
-            builder.audioTracks = TwilioViewController.localAudioTrack != nil ? [TwilioViewController.localAudioTrack!] : [LocalAudioTrack]()
+            
+            if let audioTrack = TwilioViewController.localAudioTrack {
+                    builder.audioTracks = [ audioTrack ]
+                }
+    
             builder.videoTracks = TwilioViewController.localVideoTrack != nil ? [TwilioViewController.localVideoTrack!] : [LocalVideoTrack]()
             builder.encodingParameters = EncodingParameters(audioBitrate:16, videoBitrate:0)
-           
+            let videoBandwidthProfileOptions = VideoBandwidthProfileOptions { builder in
+                    builder.mode = .grid
+                   builder.dominantSpeakerPriority = .standard
+
+                }
+                builder.bandwidthProfileOptions = BandwidthProfileOptions(videoOptions: videoBandwidthProfileOptions)
+              
         }
         
         TwilioViewController.room = TwilioVideoSDK.connect(options: connectOptions, delegate: self)
     }
     
+    func prepareAudio(){
+        
+        self.audioDevice.block = {
+            do {
+                DefaultAudioDevice.DefaultAVAudioSessionConfigurationBlock()
+
+                let audioSession = AVAudioSession.sharedInstance()
+                try audioSession.setMode(.voiceChat)
+            } catch let error as NSError {
+                print("Fail: \(error.localizedDescription)")
+            }
+        }
+
+        self.audioDevice.block();
+    }
     // ------------------------------------------------------------------------------------------------------
     func connect(sender: AnyObject) {
         self.connectToARoom()
@@ -338,16 +368,13 @@ class TwilioViewController: UIViewController {
             }
             
             
-            let format = VideoFormat()
-            format.dimensions = CMVideoDimensions(width:1920, height: 1080)
-            format.frameRate = 24
+           
             let supportedFormats = CameraSource.supportedFormats(captureDevice: backCamera!)
                        // var formatFound: VideoFormat?
                         for format in supportedFormats {
                             if let formatCasted = format as? VideoFormat {
-                                if formatCasted.dimensions.height == 1080 && formatCasted.dimensions.width == 1920 {
-                                  //  formatFound = formatCasted
-                                    
+                                if formatCasted.dimensions.height == 480 && formatCasted.dimensions.width == 640 {
+                                    formatCasted.frameRate = 24
                                     TwilioViewController.camera!.startCapture(device: frontCamera != nil ? frontCamera! : backCamera!, format: formatCasted, completion: { (captureDevice, videoFormat, error) in
                                         if let error = error {
                                             self.logMessage(messageText: "Capture failed with error.\ncode = \((error as NSError).code) error = \(error.localizedDescription)")
@@ -409,12 +436,20 @@ class TwilioViewController: UIViewController {
     
     // ------------------------------------------------------------------------------------------------------
     func prepareLocalMedia() {
-        
+      //  self.audioDevice = DefaultAudioDevice()
+       // TwilioVideoSDK.audioDevice = self.audioDevice
+
         // We will share local audio and video when we connect to the Room.
         
         // Create an audio track.
+        let audioOptions = AudioOptions { (options) in
+            options.isSoftwareAecEnabled = true
+        }
+            
+
         if (TwilioViewController.localAudioTrack == nil) {
-            TwilioViewController.localAudioTrack = LocalAudioTrack(options: nil, enabled: true, name: "Microphone")
+            TwilioViewController.localAudioTrack = LocalAudioTrack(options: audioOptions, enabled: true, name: "Microphone")
+
             
             if (TwilioViewController.localAudioTrack == nil) {
                 logMessage(messageText: "Failed to create audio track")
@@ -865,3 +900,4 @@ class CustomView : UIView {
         super.init(coder: aDecoder)
     }
 }
+
