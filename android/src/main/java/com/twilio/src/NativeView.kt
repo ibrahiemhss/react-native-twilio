@@ -688,7 +688,7 @@ class NativeView(
       remoteVideoTrackPublication: RemoteVideoTrackPublication,
       remoteVideoTrack: RemoteVideoTrack
     ) {
-    //  setPrimaryViewPlaceholder(false)
+      //  setPrimaryViewPlaceholder(false)
 
       Log.i(
         TAG, "onVideoTrackUnsubscribed: " +
@@ -837,7 +837,8 @@ class NativeView(
 
   fun connectToRoom(src: ReadableMap?) {
     // setAccessTokenFromPref()
-    if (src!!.hasKey("token")) {
+    if (src==null) return
+    if (src.hasKey("token")) {
       this.accessToken = src.getString("token")!!
     }
     if (src.hasKey("imgUriPlaceHolder")) {
@@ -849,6 +850,7 @@ class NativeView(
     if (src.hasKey("localTextPlaceHolder")) {
       this.localTextPlaceholder = src.getString("localTextPlaceHolder")!!
     }
+    if (this.accessToken==null) return
     if (this.accessToken.isEmpty()) return
     try {
       audioSwitch.activate()
@@ -937,7 +939,7 @@ class NativeView(
         mPrimaryVideoView!!.visibility = INVISIBLE
 
       } else {
-        if (this.mRemotePlacecHolderTextView != null) {
+        if (this.mRemotePlacecHolderTextView != null && textPlaceholder!=null) {
           val temp = this.textPlaceholder.toString()
           this.mRemotePlacecHolderTextView!!.text = temp
         } else {
@@ -961,18 +963,18 @@ class NativeView(
       mThumbnailVideoView!!.elevation= 2F
     } else {
 
-        if (this.mRemotePlacecHolderTextView != null) {
-          val temp = this.localTextPlaceholder.toString()
-          this.mRemotePlacecHolderTextView!!.text = temp
-        } else {
-          val temp = "CAMERA CLOSED"
-          this.mThumbnailPlaceHolderText!!.text = temp
+      if (this.mRemotePlacecHolderTextView != null && localTextPlaceholder !=null) {
+        val temp = this.localTextPlaceholder.toString()
+        this.mRemotePlacecHolderTextView!!.text = temp
+      } else {
+        val temp = "CAMERA CLOSED"
+        this.mThumbnailPlaceHolderText!!.text = temp
 
-        }
+      }
       mThumbnailPlaceHolderView!!.visibility = VISIBLE
       mThumbnailPlaceHolderText!!.visibility = VISIBLE
-        mThumbnailVideoView!!.visibility = INVISIBLE
-      }
+      mThumbnailVideoView!!.visibility = INVISIBLE
+    }
 
   }
 

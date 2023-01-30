@@ -59,11 +59,22 @@ class TwilioView : UIView {
     
     override public init(frame: CGRect) {
         super.init(frame: frame)
+        DispatchQueue.main.async {
+         NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: nil, using: self.routeChange)
+        }
         addSubview(_rootController.view);
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+     func routeChange(_ n: Notification) {
+        do {
+             try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .videoChat, options: [.mixWithOthers, .defaultToSpeaker, .allowBluetooth, .allowAirPlay])
+         } catch {
+           print(error)
+         }
     }
     
     @objc var initialize: NSDictionary = [:]  {

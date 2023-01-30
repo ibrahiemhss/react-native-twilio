@@ -2,6 +2,7 @@
 import Foundation
 import TwilioVideo
 import AVFoundation
+import TwilioVideo
 
 class TwilioViewController: UIViewController {
     
@@ -14,7 +15,8 @@ class TwilioViewController: UIViewController {
     public static var localVideoTrack: LocalVideoTrack?
     public static var localAudioTrack: LocalAudioTrack?
     public static var remoteParticipant: RemoteParticipant?
-    
+    public static var rr: RemoteParticipant?
+
     // all static
     public static var textLabel = UILabel(frame: CGRect.zero)
     public static var accessToken : String?
@@ -64,7 +66,7 @@ class TwilioViewController: UIViewController {
         TwilioViewController.localTextPlaceHolder = _localTextPlaceHolder as? String
         TwilioViewController.textPlaceHolder = _textPlaceHolder as? String
         
-        
+
         self.connectToARoom()
     }
     
@@ -285,13 +287,13 @@ class TwilioViewController: UIViewController {
         let connectOptions = ConnectOptions(token: TwilioViewController.accessToken!) { (builder) in
             builder.preferredAudioCodecs = [OpusCodec()]
             builder.preferredVideoCodecs =  [Vp8Codec()]
-            
+            builder.region = "de1"
             builder.audioTracks = TwilioViewController.localAudioTrack != nil ? [TwilioViewController.localAudioTrack!] : [LocalAudioTrack]()
             builder.videoTracks = TwilioViewController.localVideoTrack != nil ? [TwilioViewController.localVideoTrack!] : [LocalVideoTrack]()
             builder.encodingParameters = EncodingParameters(audioBitrate:16, videoBitrate:0)
             
         }
-        
+    
         TwilioViewController.room = TwilioVideoSDK.connect(options: connectOptions, delegate: self)
     }
     
@@ -390,12 +392,18 @@ class TwilioViewController: UIViewController {
     
     // ------------------------------------------------------------------------------------------------------
     func prepareLocalMedia() {
+
+        let audioOptions = AudioOptions { (options) in
+            options.isSoftwareAecEnabled = true
+        }
+      
         
         // We will share local audio and video when we connect to the Room.
         
         // Create an audio track.
+        
         if (TwilioViewController.localAudioTrack == nil) {
-            TwilioViewController.localAudioTrack = LocalAudioTrack(options: nil, enabled: true, name: "Microphone")
+            TwilioViewController.localAudioTrack = LocalAudioTrack(options: audioOptions, enabled: true, name: "Microphone")
             
             if (TwilioViewController.localAudioTrack == nil) {
                 logMessage(messageText: "Failed to create audio track")
@@ -407,6 +415,7 @@ class TwilioViewController: UIViewController {
             self.startPreview()
         }
     }
+    
     
     // ------------------------------------------------------------------------------------------------------
     func renderRemoteParticipant(participant : RemoteParticipant) -> Bool {
