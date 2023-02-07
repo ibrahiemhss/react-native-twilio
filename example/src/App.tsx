@@ -10,15 +10,24 @@ import {
 import TwilioView, { EventType, twilioEmitter } from 'react-native-twilio';
 
 export default function App() {
-  const imgUri =
-    'https://develop.watchbeem.com/profile_avatars/c5f9c093-3166-47e9-b83e-84f6d72c7151/avatar.jpg?1669199370556.498';
-
+  const imgUri = 'https://picsum.photos/200/300.jpg';
   const token1 =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzUwNzIzNjciLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NTA3NTk2NywiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjEiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.GplC0NRYo_0Mc24UXWm8iyYusAgI5XRS82RHgmzlssM';
-  const token2 =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzUwNzIzOTEiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NTA3NTk5MSwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjIiLCJ2aWRlbyI6eyJyb29tIjoicm9vbTEifX19.qGcgQETnQaHHMhecL3YEQGgFNxBU4IrqNdF6eajakJ8';
-  TwilioView.initialize();
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3LTE2NzU3NjQ2OTAiLCJpc3MiOiJTSzdkNGI0NWZmYzU0OWQ2MjQ3ZmI1OGMwNmM3ZTdiMmU3Iiwic3ViIjoiQUNjNzc1OTc1ZTA3MDlkNTQ3OGFiN2Q2OTY2YjA0ODZkOCIsImV4cCI6MTY3NTc2ODI5MCwiZ3JhbnRzIjp7ImlkZW50aXR5IjoidXNlcjEyIiwidmlkZW8iOnsicm9vbSI6InJvb20xIn19fQ.My4W5_q7stXgV3Iu-W0OQDBq93ufzf5HUQshY5X8Y4Q';
+  const twilioRef = React.useRef<any>();
+  const src = {
+    token: token1,
+    roomName: 'room1',
+    imgUriPlaceHolder: imgUri,
+    localTextPlaceHolder: 'No Preview',
+    textPlaceHolder: 'No Preview',
+    audioEnabled: false,
+    cameraSwitched: true,
+    videoEnabled: true,
+  };
+
   React.useEffect(() => {
+    twilioRef.current?.initialize();
+    twilioRef.current?.connect(src);
     const subscriptions = [
       twilioEmitter.addListener(EventType.ON_VIDEO_ENABLED, (data) => {
         console.log(
@@ -261,21 +270,12 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <TwilioView
-        src={{
-          token: Platform.OS === 'ios' ? token2 : token1,
-          roomName: 'room1',
-          imgUriPlaceHolder: imgUri,
-          localTextPlaceHolder: 'No Preview',
-          textPlaceHolder: 'No Preview',
-        }}
-        style={styles.box}
-      />
+      <TwilioView ref={twilioRef} style={styles.box} />
       <View style={styles.containerBtns}>
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            TwilioView.mute();
+            twilioRef.current?.mute();
           }}
         >
           <Text style={styles.text}>mute</Text>
@@ -283,7 +283,7 @@ export default function App() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            TwilioView.flipCamera();
+            twilioRef.current?.flipCamera();
           }}
         >
           <Text style={styles.text}>switch camera</Text>
@@ -291,7 +291,7 @@ export default function App() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            TwilioView.closeCamera();
+            twilioRef.current?.closeCamera();
           }}
         >
           <Text style={styles.text}>lock camera</Text>
@@ -299,7 +299,7 @@ export default function App() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            TwilioView.endCall();
+            twilioRef.current?.endCall();
           }}
         >
           <Text style={styles.text}>end call</Text>

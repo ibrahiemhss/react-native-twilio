@@ -2,13 +2,13 @@
 //  TwilioEmitter.swift
 //  react-native-twilio
 //
-//  Created by ibrahim on 18/01/2023.
+//  Created by jafar-jabr on 18/01/2023.
 //
 import React
 import Foundation
 @objc(TwilioEmitter)
 open class TwilioEmitter: RCTEventEmitter {
-    
+
     public static var ON_FRAME_DIMENSIONS_CHANGED = "onFrameDimensionsChanged"
     public static var ON_CAMERA_SWITCHED = "onCameraSwitched"
     public static var ON_VIDEO_CHANGED = "onVideoChanged"
@@ -54,7 +54,7 @@ open class TwilioEmitter: RCTEventEmitter {
     public static var ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS = "onLocalParticipantSupportedCodecs"
     public static var ON_VIDEO_ENABLED = "onVideoEnabled"
     public static var ON_MUTE = "onAudioEnabled"
-    
+
     var hasListeners = false
     public static var emitter: RCTEventEmitter!
 

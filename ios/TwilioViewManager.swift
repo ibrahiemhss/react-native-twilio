@@ -9,9 +9,21 @@ import AVFoundation
 class TwilioViewManager: RCTViewManager {
     
     override func view() -> (TwilioView) {
+       // TwilioVideoSDK.audioDevice = DefaultAudioDevice()
+       // TwilioVideoSDK.audioDevice = TwilioViewController.audioDevice
+       // DispatchQueue.main.async {
+         NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: nil, using: self.routeChange)
+       // }
         return TwilioView()
     }
     
+    func routeChange(_ n: Notification) {
+       do {
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .videoChat, options: [.mixWithOthers, .defaultToSpeaker, .allowBluetooth, .allowAirPlay])
+        } catch {
+          print(error)
+        }
+   }
     @objc override static func requiresMainQueueSetup() -> Bool {
         return true
     }
@@ -59,9 +71,6 @@ class TwilioView : UIView {
     
     override public init(frame: CGRect) {
         super.init(frame: frame)
-        DispatchQueue.main.async {
-         NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: nil, using: self.routeChange)
-        }
         addSubview(_rootController.view);
     }
     
@@ -69,13 +78,7 @@ class TwilioView : UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-     func routeChange(_ n: Notification) {
-        do {
-             try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .videoChat, options: [.mixWithOthers, .defaultToSpeaker, .allowBluetooth, .allowAirPlay])
-         } catch {
-           print(error)
-         }
-    }
+
     
     @objc var initialize: NSDictionary = [:]  {
         didSet {
@@ -118,6 +121,7 @@ class TwilioView : UIView {
     override func layoutSubviews() {
         self._rect = CGRect(x: 0, y:0, width: frame.width, height: frame.height)
         self._rootController.setDataSrc(data: _src,rect: _rect)
+
     }
     
 }

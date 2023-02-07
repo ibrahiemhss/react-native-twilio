@@ -28,9 +28,9 @@ import com.facebook.react.modules.core.PermissionAwareActivity
 import com.facebook.react.modules.core.PermissionListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.twilio.R
+import com.twilio.TwilioViewManager
 import com.twilio.audioswitch.AudioDevice.*
 import com.twilio.audioswitch.AudioSwitch
-import com.twilio.src.utils.isH264Supported
 import com.twilio.video.*
 import com.twilio.video.VideoView
 import com.twilio.video.ktx.Video.connect
@@ -45,7 +45,6 @@ import kotlin.properties.Delegates
 class NativeView(
   context: Context,
   reactApplicationContext: ReactApplicationContext,
-  isFromReact: Boolean,
   activity: Activity,
   permissionAwareActivity: PermissionAwareActivity
 ) :
@@ -58,19 +57,18 @@ class NativeView(
   private val CAMERA_PERMISSION_INDEX = 0
   private val MIC_PERMISSION_INDEX = 1
   private lateinit var accessToken: String
-  val shape = GradientDrawable()
   private var localTextPlaceholder: String? = null
   private var imageUrlPlaceholder: String? = null
   private var textPlaceholder: String? = null
-  public var myRoom: Room? = null
-  public var myActivity: Activity? = null
-  public var myPermissionAwareActivity: PermissionAwareActivity? = null
-  public var myLocalParticipant: LocalParticipant? = null
-  public var savedVolumeControlStream by Delegates.notNull<Int>()
+  private var myRoom: Room? = null
+  private var myActivity: Activity? = null
+  private var myPermissionAwareActivity: PermissionAwareActivity? = null
+  private var myLocalParticipant: LocalParticipant? = null
+  private var savedVolumeControlStream by Delegates.notNull<Int>()
   var localAudioTrack: LocalAudioTrack? = null
   var localVideoTrack: LocalVideoTrack? = null
   private var participantIdentity: String? = null
-  lateinit var localVideoView: VideoSink
+  var localVideoView: VideoSink
   var disconnectedFromOnDestroy = false
   private var isSpeakerPhoneEnabled = true
   var mainView: View? = null
@@ -104,7 +102,6 @@ class NativeView(
     val inflater = LayoutInflater.from(context)
     mainView = inflater.inflate(R.layout.video_view, this)
     //-------------------------------------------------
-    setAccessTokenFromPref()
     mReconnectingProgressBar =
       mainView!!.findViewById<View>(R.id.reconnectingProgressBar) as ProgressBar?
     mThumbnailVideoView = mainView!!.findViewById<View>(R.id.thumbnailVideoView) as VideoView?
@@ -184,11 +181,7 @@ class NativeView(
     }
   private val videoCodec: VideoCodec
     get() {
-      if(isH264Supported()){
-        return  H264Codec()
-      }else{
-        return Vp8Codec()
-      }
+      return Vp8Codec()
     }
 
   // ===== SETUP =================================================================================
@@ -220,7 +213,7 @@ class NativeView(
          ) ?: defaultMaxVideoBitrate
        )*/
 
-      return EncodingParameters(10000, 16000)
+      return EncodingParameters(0, 0)
     }
 
   /*
@@ -816,7 +809,6 @@ class NativeView(
   fun createAudioAndVideoTracks() {
     // Share your microphone
     localAudioTrack = createLocalAudioTrack(this.context, true)
-
     // Share your camera
     localVideoTrack = createLocalVideoTrack(
       this.context,
@@ -827,41 +819,31 @@ class NativeView(
     )
   }
 
-  public fun setAccessTokenFromPref() {
-    val sharedPref = mReactApplicationContext!!
-      .getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE)
-    val prefToken = sharedPref.getString(Constants.PREF_TOEKN, null)
-    this.accessToken = prefToken.toString();
-
-  }
-
   fun connectToRoom(src: ReadableMap?) {
-    // setAccessTokenFromPref()
     if (src==null) return
     if (src.hasKey("token")) {
-      this.accessToken = src.getString("token")!!
+      this.accessToken = src.getString("token").toString()
     }
     if (src.hasKey("imgUriPlaceHolder")) {
-      this.imageUrlPlaceholder = src.getString("imgUriPlaceHolder")!!
+      this.imageUrlPlaceholder = src.getString("imgUriPlaceHolder")
     }
     if (src.hasKey("textPlaceHolder")) {
-      this.textPlaceholder = src.getString("textPlaceHolder")!!
+      this.textPlaceholder = src.getString("textPlaceHolder")
     }
     if (src.hasKey("localTextPlaceHolder")) {
-      this.localTextPlaceholder = src.getString("localTextPlaceHolder")!!
+      this.localTextPlaceholder = src.getString("localTextPlaceHolder")
     }
-    if (this.accessToken==null) return
     if (this.accessToken.isEmpty()) return
     try {
       audioSwitch.activate()
       Log.d(
         TAG, "On connectToRoom =========================\n" +
-          " roomName:${src.getString("roomName")!!}\n"
+          " roomName:${src.getString("roomName")}\n"
       )
 
       myRoom = connect(this.context, accessToken, roomListener) {
 
-        roomName(src.getString("roomName")!!)
+        src.getString("roomName")?.let { roomName(it) }
         /*
          * Add local audio track to connect options to share with participants.
          */
@@ -874,7 +856,7 @@ class NativeView(
         /*
          * Set the preferred audio and video codec for media.
          */
-        preferAudioCodecs(listOf(G722Codec(),))
+        preferAudioCodecs(listOf(audioCodec))
         preferVideoCodecs(listOf(videoCodec))
 
         /*
@@ -890,12 +872,35 @@ class NativeView(
          * Rooms. Toggling the flag in a P2P room does not modify subscription behavior.
          */
         enableAutomaticSubscription(enableAutomaticSubscription)
+
+
+        //TODO ==================================
+        if (src.hasKey("videoEnabled")&&src.hasKey("audioEnabled")&&src.hasKey("cameraSwitched")) {
+          setValuesAfterConnect(src.getBoolean("videoEnabled"),src.getBoolean("audioEnabled"),src.getBoolean("cameraSwitched"))
+        }
       }
     } catch (e: Exception) {
       Log.d(TAG, "On connect Exception ${e.toString()}")
     }
   }
+  public fun setValuesAfterConnect(videoEnabled: Boolean,audioEnabled: Boolean,cameraSwitched: Boolean,) {
 
+    Log.d(
+      TAG, "On setValuesAfterConnect ============ videoEnabled : ${videoEnabled} audioEnabled : ${audioEnabled} cameraSwitched : ${cameraSwitched} }"
+    )
+
+    localVideoTrack?.enable(videoEnabled)
+    localAudioTrack?.enable(audioEnabled)
+    if(cameraSwitched){
+      val cameraSource = cameraCapturerCompat.cameraSource
+      cameraCapturerCompat.switchCamera()
+      if (mPrimaryVideoView!!.visibility == View.VISIBLE) {
+        mPrimaryVideoView!!.mirror = cameraSource == CameraCapturerCompat.Source.BACK_CAMERA
+      } else {
+        mPrimaryVideoView!!.mirror = cameraSource == CameraCapturerCompat.Source.BACK_CAMERA
+      }
+    }
+  }
   /*
    * Show the current available audio devices.
    */
@@ -1106,7 +1111,6 @@ class NativeView(
       sendEvent(mReactApplicationContext!!, Constants.ON_VIDEO_ENABLED, event)
     }
   }
-
   public fun enableVideo() {
     Log.d(TAG, "========= disconnect ======= ")
     localVideoTrack?.let {
@@ -1117,6 +1121,7 @@ class NativeView(
       sendEvent(mReactApplicationContext!!, Constants.ON_VIDEO_ENABLED, event)
       setThumbnailViewPlaceholder(enable)
     }
+
   }
 
   public fun mute() {
@@ -1177,11 +1182,11 @@ class NativeView(
     return super.onSaveInstanceState()
   }
 
-  fun onPause(owner: LifecycleOwner) {
+ /* fun onPause(owner: LifecycleOwner) {
     localVideoTrack?.let { myLocalParticipant?.unpublishTrack(it) }
     localVideoTrack?.release()
     localVideoTrack = null
-  }
+  }*/
 
   fun onDestroy(owner: LifecycleOwner) {
     audioSwitch.stop()

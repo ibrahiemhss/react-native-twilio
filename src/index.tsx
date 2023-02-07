@@ -1,12 +1,3 @@
-/*
-export const TwilioView =
-  UIManager.getViewManagerConfig(ComponentName) != null
-    ? requireNativeComponent<TwilioProps>(ComponentName)
-    : () => {
-      throw new Error(LINKING_ERROR);
-    };
-*/
-
 import {
   NativeEventEmitter,
   NativeModules,
@@ -17,7 +8,8 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { Component, createRef } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
+import * as React from 'react';
 
 const twilioEmitter =
   Platform.OS === 'ios'
@@ -81,79 +73,36 @@ const LINKING_ERROR =
   '- You are not using Expo Go\n';
 
 type TwilioProps = {
-  src: {};
   style: ViewStyle;
 };
 
 const ComponentName = 'TwilioView';
-
-const nativeEvents = {
-  connectToRoom: 1,
-  disconnect: 2,
-  switchCamera: 3,
-  toggleVideo: 4,
-  toggleSound: 5,
-  getStats: 6,
-  disableOpenSLES: 7,
-  toggleSoundSetup: 8,
-  toggleRemoteSound: 9,
-  releaseResource: 10,
-  toggleBluetoothHeadset: 11,
-  sendString: 12,
-  publishVideo: 13,
-  publishAudio: 14,
-};
 const RNTwilio =
   UIManager.getViewManagerConfig(ComponentName) != null
     ? requireNativeComponent<TwilioProps>(ComponentName)
     : () => {
         throw new Error(LINKING_ERROR);
       };
-class TwilioView extends Component<TwilioProps> {
-  private static ref: any = createRef();
-  static runCommandAndroid(event: any, args: any) {
+
+const TwilioView = forwardRef((props: TwilioProps, ref: any): any => {
+  const localRef = useRef<any>();
+  const runCommandAndroid = useCallback((event: any, args: any) => {
     UIManager.dispatchViewManagerCommand(
-      findNodeHandle(this.ref.current),
+      findNodeHandle(localRef.current),
       event,
       args
     );
-  }
-  static initialize() {
-    const subscribeRegisterAndroid = TwilioView.listenTwilio();
-    return () => {
-      subscribeRegisterAndroid();
-    };
-  }
-  static flipCamera() {
-    if (Platform.OS === 'ios') {
-      NativeModules.TwilioViewManager.switchCamera();
-    } else {
-      this.runCommandAndroid('switchCamera', []);
-    }
-  }
-  static mute() {
-    if (Platform.OS === 'ios') {
-      NativeModules.TwilioViewManager.mute();
-    } else {
-      this.runCommandAndroid('mute', []);
-    }
-  }
-  static closeCamera() {
-    if (Platform.OS === 'ios') {
-      NativeModules.TwilioViewManager.closeCamera();
-    } else {
-      this.runCommandAndroid('closeCamera', []);
-    }
-  }
-  static endCall() {
-    if (Platform.OS === 'ios') {
-      NativeModules.TwilioViewManager.endCall();
-    } else {
-      this.runCommandAndroid('endCall', []);
-    }
-  }
-  private static listenTwilio() {
-    TwilioView.removeTwilioListeners();
+  }, []);
+
+  const removeTwilioListeners = useCallback(() => {
+    twilioEmitter.removeAllListeners(EventType.ON_CONNECTED);
+    twilioEmitter.removeAllListeners(EventType.ON_DISCONNECTED);
+    twilioEmitter.removeAllListeners(EventType.ON_CONNECT_FAILURE);
+    twilioEmitter.removeAllListeners(EventType.ON_RE_CONNECTED);
+  }, []);
+
+  const listenTwilio = useCallback(() => {
+    removeTwilioListeners();
 
     const subscriptions = [
       twilioEmitter.addListener(
@@ -169,17 +118,62 @@ class TwilioView extends Component<TwilioProps> {
         subscription.remove();
       });
     };
-  }
+  }, []);
 
-  private static removeTwilioListeners() {
-    twilioEmitter.removeAllListeners(EventType.ON_CONNECTED);
-    twilioEmitter.removeAllListeners(EventType.ON_DISCONNECTED);
-    twilioEmitter.removeAllListeners(EventType.ON_CONNECT_FAILURE);
-    twilioEmitter.removeAllListeners(EventType.ON_RE_CONNECTED);
-  }
+  useImperativeHandle(ref, () => ({
+    initialize: () => {
+      const subscribeRegisterAndroid = listenTwilio();
+      return () => {
+        subscribeRegisterAndroid();
+      };
+    },
 
-  render() {
-    return <RNTwilio ref={TwilioView.ref} {...this.props} />;
-  }
-}
+    connect: (src: any) => {
+      if (Platform.OS === 'ios') {
+        NativeModules.TwilioViewManager.connect();
+      } else {
+        runCommandAndroid('connect', [src]);
+      }
+    },
+    flipCamera: () => {
+      if (Platform.OS === 'ios') {
+        NativeModules.TwilioViewManager.switchCamera();
+      } else {
+        runCommandAndroid('switchCamera', []);
+      }
+    },
+    mute: () => {
+      if (Platform.OS === 'ios') {
+        NativeModules.TwilioViewManager.mute();
+      } else {
+        runCommandAndroid('mute', []);
+      }
+    },
+    closeCamera: () => {
+      if (Platform.OS === 'ios') {
+        NativeModules.TwilioViewManager.closeCamera();
+      } else {
+        runCommandAndroid('closeCamera', []);
+      }
+    },
+    endCall: () => {
+      if (Platform.OS === 'ios') {
+        NativeModules.TwilioViewManager.endCall();
+      } else {
+        runCommandAndroid('endCall', []);
+      }
+    },
+  }));
+
+  return <RNTwilio ref={localRef} {...props} />;
+});
+TwilioView.defaultProps = {
+  /*  src: {
+    roomName: '',
+    token: '',
+    textPlaceHolder: 'No Preview',
+    imgUriPlaceHolder: 'https://picsum.photos/200/300.jpg',
+    localTextPlaceHolder: 'No Preview',
+  },*/
+};
 export default TwilioView;

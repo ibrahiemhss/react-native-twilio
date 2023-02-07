@@ -6,8 +6,6 @@ import TwilioVideo
 
 class TwilioViewController: UIViewController {
     
-    
-    
     // Video SDK components
     public static var room: Room?
     public static var roomName: String?
@@ -31,7 +29,7 @@ class TwilioViewController: UIViewController {
     public static var localPlaceHolderContainer: CustomView?
     public static var placeHolderLabel:UILabel = UILabel.init()
     public static var localPlaceHolderLabel:UILabel = UILabel.init()
-    
+    public static  var audioDevice = DefaultAudioDevice()
     
     var remoteView: VideoView?
     var previewView:VideoView = VideoView.init()
@@ -66,6 +64,7 @@ class TwilioViewController: UIViewController {
         TwilioViewController.localTextPlaceHolder = _localTextPlaceHolder as? String
         TwilioViewController.textPlaceHolder = _textPlaceHolder as? String
         
+        TwilioViewController.audioDevice = DefaultAudioDevice()
 
         self.connectToARoom()
     }
@@ -293,7 +292,6 @@ class TwilioViewController: UIViewController {
             builder.encodingParameters = EncodingParameters(audioBitrate:16, videoBitrate:0)
             
         }
-    
         TwilioViewController.room = TwilioVideoSDK.connect(options: connectOptions, delegate: self)
     }
     
@@ -404,7 +402,7 @@ class TwilioViewController: UIViewController {
         
         if (TwilioViewController.localAudioTrack == nil) {
             TwilioViewController.localAudioTrack = LocalAudioTrack(options: audioOptions, enabled: true, name: "Microphone")
-            
+
             if (TwilioViewController.localAudioTrack == nil) {
                 logMessage(messageText: "Failed to create audio track")
             }

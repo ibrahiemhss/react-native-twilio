@@ -2,9 +2,9 @@
   "name": "react-native-twilio",
   "version": "0.1.0",
   "description": "test",
-  "main": "lib/commonjs/index",
-  "module": "lib/module/index",
-  "types": "lib/typescript/index.d.ts",
+  "main": "src/index",
+  "module": "src/index",
+  "types": "src/index.d.ts",
   "react-native": "src/index",
   "source": "src/index",
   "files": [
@@ -41,13 +41,13 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/ibrahiemhss/react-native-twilio",
-  "author": "ibrahiemhss <kekoreko3@gmail.com> (https://github.com/ibrahiemhss)",
+  "repository": "https://github.com/jafar-jabr/react-native-twilio",
+  "author": "jafar-jabr <jafar.jabr.dev@gmail.com> (https://github.com/jafar-jabr)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ibrahiemhss/react-native-twilio/issues"
+    "url": "https://github.com/jafar-jabr/react-native-twilio/issues"
   },
-  "homepage": "https://github.com/ibrahiemhss/react-native-twilio#readme",
+  "homepage": "https://github.com/jafar-jabr/react-native-twilio#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
